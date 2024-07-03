@@ -304,7 +304,7 @@ class FSModel(tfk.Model):
         return indices
 
     @tf.function
-    def pullbacks(self, points, j_elim=None):
+    def pullbacks(self,points, j_elim=None):
         r"""Computes the pullback tensor at each point.
 
         NOTE:
@@ -327,8 +327,7 @@ class FSModel(tfk.Model):
                 point.
         """
         inv_one_mask = self._get_inv_one_mask(points)
-        cpoints = tf.complex(points[:, :self.ncoords],
-                             points[:, self.ncoords:])
+        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
         if j_elim is None:
             dQdz_indices = self._find_max_dQ_coords(points)
         else:
@@ -341,21 +340,12 @@ class FSModel(tfk.Model):
         full_mask = tf.cast(full_mask, dtype=tf.bool)
         x_z_indices = tf.where(full_mask)
         good_indices = x_z_indices[:, 1:2]
-        pullbacks = tf.zeros((n_p, self.nfold, self.ncoords),
-                             dtype=tf.complex64)
-        y_indices = tf.repeat(
-            tf.expand_dims(tf.cast(tf.range(self.nfold), dtype=tf.int64), 0),
-            n_p, axis=0)
-        y_indices = tf.reshape(y_indices, (-1, 1))
-        diag_indices = tf.concat((x_z_indices[:, 0:1], y_indices, good_indices),
-                                 axis=-1)
-        pullbacks = tf.tensor_scatter_nd_update(
-            pullbacks, diag_indices,
-            tf.ones(self.nfold*n_p, dtype=tf.complex64)
-        )
         fixed_indices = tf.reshape(dQdz_indices, (-1, 1))
+
+        # Compute dz_hyper and B matrices
+        dz_hyper = []
+        B = []
         for i in range(self.nhyper):
-            # compute p_i\alpha eq (5.24)
             pia_polys = tf.gather_nd(self.BASIS['DQDZB'+str(i)], good_indices)
             pia_factors = tf.gather_nd(self.BASIS['DQDZF'+str(i)], good_indices)
             pia = tf.expand_dims(tf.repeat(cpoints, self.nfold, axis=0), 1)
@@ -363,34 +353,42 @@ class FSModel(tfk.Model):
             pia = tf.reduce_prod(pia, axis=-1)
             pia = tf.reduce_sum(tf.multiply(pia_factors, pia), axis=-1)
             pia = tf.reshape(pia, (-1, 1, self.nfold))
-            if i == 0:
-                dz_hyper = pia
-            else:
-                dz_hyper = tf.concat((dz_hyper, pia), axis=1)
-            # compute p_ifixed
+            dz_hyper.append(pia)
+
             pif_polys = tf.gather_nd(self.BASIS['DQDZB'+str(i)], fixed_indices)
-            pif_factors = tf.gather_nd(self.BASIS['DQDZF'+str(i)],
-                                       fixed_indices)
+            pif_factors = tf.gather_nd(self.BASIS['DQDZF'+str(i)], fixed_indices)
             pif = tf.expand_dims(tf.repeat(cpoints, self.nhyper, axis=0), 1)
             pif = tf.math.pow(pif, pif_polys)
             pif = tf.reduce_prod(pif, axis=-1)
             pif = tf.reduce_sum(tf.multiply(pif_factors, pif), axis=-1)
             pif = tf.reshape(pif, (-1, 1, self.nhyper))
-            if i == 0:
-                B = pif
-            else:
-                B = tf.concat((B, pif), axis=1)
+            B.append(pif)
+
+        dz_hyper = tf.concat(dz_hyper, axis=1)
+        B = tf.concat(B, axis=1)
         all_dzdz = tf.einsum('xij,xjk->xki', tf.linalg.inv(B), tf.complex(-1., 0.) * dz_hyper)
 
-        # fill at the right position
+
+        identity = tf.eye(self.ncoords, dtype=tf.complex64)
+        identities=tf.repeat(identity[tf.newaxis,:,:],n_p,axis=0)
+
+        good_identity = tf.boolean_mask(identities, full_mask, axis=0)
+        good_identity=tf.reshape(good_identity,(n_p,self.nfold,self.ncoords))
+
+
+        # Add ones to the diagonal for non-eliminated coordinates
+        #pullbacks += tf.repeat(good_identity[tf.newaxis, tf.newaxis, :, :], [n_p, self.nfold, 1, 1])
+        pullbacks=good_identity
+
+        # Add computed values for eliminated coordinates
         for i in range(self.nhyper):
-            fixed_indices = tf.reshape(
-                tf.repeat(dQdz_indices[:, i], self.nfold), (-1, 1))
-            zjzi_indices = tf.concat(
-                (x_z_indices[:, 0:1], y_indices, fixed_indices), axis=-1)
-            zjzi_values = tf.reshape(all_dzdz[:,:,i], [self.nfold*n_p])
-            pullbacks = tf.tensor_scatter_nd_update(
-                pullbacks, zjzi_indices, zjzi_values)
+            update_mask = tf.one_hot(dQdz_indices[:, i], self.ncoords, dtype=tf.complex64)
+            update_mask = tf.repeat(update_mask[:, tf.newaxis, :], self.nfold, axis=1)
+            pullbacks += update_mask * all_dzdz[:, :, i:i+1]
+
+        # Remove rows corresponding to eliminated coordinates
+        #pullbacks = tf.boolean_mask(pullbacks, full_mask, axis=2)
+
         return pullbacks
 
     @tf.function
