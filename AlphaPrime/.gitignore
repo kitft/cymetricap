@@ -1,0 +1,7 @@
+data/
+*.out
+*.npz
+*/*.npz
+basedata13/
+__pycache__/
+
