@@ -10,14 +10,14 @@ with open("requirements.txt", "r") as fh:
     REQUIREMENTS = fh.read().splitlines()
 
 setuptools.setup(
-    name="cymetric",
+    name="cymetricap",
     version=VERSION,
     author="Fabian Ruehle, Robin Schneider",
     author_email="robin.schneider@physics.uu.se",
     description="An open source python library to study CY metrics.",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
-    url="https://github.com/robin-schneider/cymetric",
+    url="https://github.com/robin-schneider/cymetricap",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -27,5 +27,5 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Physics",
     ],
     install_requires=REQUIREMENTS,
-    package_data={'cymetric': ['wolfram/*.m']},
+    package_data={'cymetricap': ['wolfram/*.m']},
 )
