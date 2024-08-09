@@ -492,17 +492,6 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     val_pullbacks=tf.cast(pullbacks[t_i:],tf.complex64) 
 
     # points = pwo['point'][mask]
-    
- 
-    source_computing_class= Q_compiled_function(metricModel,realpoints[0:1])    
-    Q_values,euler_all_with_sqrtg = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
-    sources = euler_char-Q_values
-    sources_train=sources[:t_i]
-    sources_val=sources[t_i:]
-
-    print("Euler_characteristic with " + str(len(euler_all_with_sqrtg)) + "points: " + str(tf.reduce_mean(euler_all_with_sqrtg)))
-    print("integral of sources: " + str(tf.reduce_mean(euler_char-euler_all_with_sqrtg)))
-
     det = tf.math.real(absdets)  # * factorial / (2**nfold)
     #print("hi")
     det_over_omega = det / omega[:,0]
@@ -518,7 +507,19 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     #print("hi")
     det = tf.cast(det,tf.float32)
     print('kappa over 6 ')
-    print(kappaover6)
+    print(kappaover6) 
+ 
+    source_computing_class= Q_compiled_function(metricModel,realpoints[0:1])    
+    Q_values,euler_all_with_sqrtg = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
+    #sources = euler_char/volume - Qs
+    sources = euler_char/vol_k-Q_values
+    sources_train=sources[:t_i]
+    sources_val=sources[t_i:]
+
+    print("Euler_characteristic with " + str(len(euler_all_with_sqrtg)) + "points: " + str(tf.reduce_mean(euler_all_with_sqrtg)))
+    print("integral of sources: " + str(tf.reduce_mean(euler_char-euler_all_with_sqrtg)))
+
+    
     np.savez_compressed(os.path.join(dirname, 'dataset'),
                         X_train=X_train,
                         y_train=y_train,
