@@ -223,43 +223,29 @@ class AlphaPrimeModel(FSModel):
 
     def compile(self, custom_metrics=None, **kwargs):
         r"""Compiles the model.
-
         kwargs takes any argument of regular `tf.model.compile()`
-
         Example:
             >>> model = FreeModel(nn, BASIS)
             >>> from cymetric.models.metrics import TotalLoss
             >>> metrics = [TotalLoss()]
             >>> opt = tfk.optimizers.Adam()
-            >>> model.compile(custom_metrics = metrics, optimizer = opt)        
-
+            >>> model.compile(metrics=metrics, optimizer=opt)
         Args:
             custom_metrics (list, optional): List of custom metrics.
                 See also :py:mod:`cymetric.models.metrics`. If None, no metrics
                 are tracked during training. Defaults to None.
         """
+        if custom_metrics is not None:
+            kwargs['metrics'] = custom_metrics
         super(AlphaPrimeModel, self).compile(**kwargs)
-        self.custom_metrics = custom_metrics
 
     @property
     def metrics(self):
-        r"""Returns the models metrics including custom metrics.
-
+        r"""Returns the model's metrics, including custom metrics.
         Returns:
             list: metrics
         """
-        metrics = []
-        if self._is_compiled:
-            if self.compiled_loss is not None:
-                metrics += self.compiled_loss.metrics
-            if self.compiled_metrics is not None:
-                metrics += self.compiled_metrics.metrics
-            if self.custom_metrics is not None:
-                metrics += self.custom_metrics
-
-        for layer in self._flatten_layers():
-            metrics.extend(layer._metrics)
-        return metrics
+        return self._metrics
 
     def train_step(self, data):
         r"""Train step of a single batch in model.fit().
@@ -307,7 +293,8 @@ class AlphaPrimeModel(FSModel):
         # print(list(x))
         with tf.GradientTape(persistent=False) as tape:
             trainable_vars = self.model.trainable_variables
-            tape.watch(trainable_vars)
+            #tape.watch(trainable_vars)
+            #automatically watch trainable vars
             # add other loss contributions.
             if self.learn_transition:
                 t_loss = self.compute_transition_loss(x)
@@ -326,8 +313,9 @@ class AlphaPrimeModel(FSModel):
             # weight the loss.
             if sample_weight is not None:
                 total_loss *= sample_weight
+            total_loss_mean=tf.reduce_mean(total_loss)
         # Compute gradients
-        gradients = tape.gradient(total_loss, trainable_vars)
+        gradients = tape.gradient(total_loss_mean, trainable_vars)
         # remove nans and gradient clipping from transition loss.
         gradients = [tf.where(tf.math.is_nan(g), 1e-8, g) for g in gradients]
         gradients, _ = tf.clip_by_global_norm(gradients, self.gclipping)
@@ -335,16 +323,11 @@ class AlphaPrimeModel(FSModel):
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         # Return metrics. NOTE: This interacts badly with any regular MSE
         # compiled loss. Make it so that only custom metrics are updated?
-        self.compiled_metrics.update_state(y, y_pred, sample_weight)
-        if self.custom_metrics is not None:
-            loss_dict = {}
-            loss_dict['loss'] = total_loss
-            loss_dict['laplacian_loss'] = lpl_loss
-            loss_dict['transition_loss'] = t_loss
-            # add other loss?
-            for m in self.custom_metrics:
-                m.update_state(loss_dict, sample_weight)
-        return {m.name: m.result() for m in self.metrics}
+        loss_dict = {m.name: m.result() for m in self.metrics}
+        loss_dict['loss'] = tf.reduce_mean(total_loss)
+        loss_dict['laplacian_loss'] = tf.reduce_mean(lpl_loss)
+        loss_dict['transition_loss'] = tf.reduce_mean(t_loss)
+        return loss_dict
 
     def test_step(self, data):
         r"""Same as train_step without the outer gradient tape.
@@ -398,17 +381,12 @@ class AlphaPrimeModel(FSModel):
         # weight the loss.
         if sample_weight is not None:
             total_loss *= sample_weight
-        # Return metrics.
-        self.compiled_metrics.update_state(y, y_pred, sample_weight)
-        if self.custom_metrics is not None:
-            loss_dict = {}
-            loss_dict['loss'] = total_loss
-            loss_dict['laplacian_loss'] = lpl_loss 
-            loss_dict['transition_loss'] = t_loss
-            # add other loss?
-            for m in self.custom_metrics:
-                m.update_state(loss_dict, sample_weight)
-        return {m.name: m.result() for m in self.metrics}
+        loss_dict = {m.name: m.result() for m in self.metrics}
+        loss_dict['loss'] = tf.reduce_mean(total_loss)
+        loss_dict['laplacian_loss'] = tf.reduce_mean(lpl_loss)
+        loss_dict['transition_loss'] = tf.reduce_mean(t_loss)
+        return loss_dict
+
 
     def save(self, filepath, **kwargs):
         r"""Saves the underlying neural network to filepath.
