@@ -749,9 +749,9 @@ def compute_batched_func(compute_Q,input_vector,batch_size,weights):
     for i in range(0, len(input_vector), batch_size):
         batch = input_vector[i:i+batch_size]
         if len(batch)<batch_size:
-            break
-        #do the computation
-        result = compute_Q(batch)
+            #copy batch as many times as necessary until you get batch_size
+            batch=np.concatenate([batch for _ in range((batch_size//len(batch))+1)],axis=0)[0:batch_size]
+        result=compute_Q(batch)
         resultall2.append(result)
         result_temp=np.concatenate(resultall2,axis=0)
         euler_all=weights[0:len(result_temp)]*result_temp
