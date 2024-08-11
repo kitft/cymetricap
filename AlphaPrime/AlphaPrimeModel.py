@@ -487,7 +487,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     print('kappa over 6 ')
     print(kappaover6) 
  
-    source_computing_class= Q_compiled_function(metricModel,realpoints[0:1],batch_size)    
+    source_computing_class= Q_compiled_function(metricModel,realpoints[0:batch_size],batch_size)    
     Q_values,euler_all_with_sqrtg = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
     #sources = euler_char/volume - Qs
     sources = euler_char/vol_k-Q_values
@@ -650,9 +650,9 @@ class Q_compiled_function(tf.Module):
         )
         print("compiled")
         #Now compile the various bits
-        self.compute_christoffel_symbols_holo_not_pb(ptsrealtoinit[0:1])
-        self.compute_riemann_m_nb_rb_sbUP(ptsrealtoinit[0:1])
-        self.compute_Q(ptsrealtoinit[0:1])
+        self.compute_christoffel_symbols_holo_not_pb(ptsrealtoinit[0:100])
+        self.compute_riemann_m_nb_rb_sbUP(ptsrealtoinit[0:100])
+        self.compute_Q(ptsrealtoinit[0:100])
 
     def compute_christoffel_symbols_holo_not_pb_uncomp(self,x):
         x_vars = x
@@ -748,6 +748,8 @@ def compute_batched_func(compute_Q,input_vector,batch_size,weights):
     resultall2=[]
     for i in range(0, len(input_vector), batch_size):
         batch = input_vector[i:i+batch_size]
+        if len(batch)<batch_size:
+            break
         #do the computation
         result = compute_Q(batch)
         resultall2.append(result)
