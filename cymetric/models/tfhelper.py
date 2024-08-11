@@ -77,7 +77,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         dataset = dataset.batch(batch_size).repeat()
         #repeat to ensure we don't run out of data 
         history = fsmodel.fit(
-            dataset,
+            dataset.repeat(),
             epochs=1, batch_size=batch_size, verbose=verbose,
             callbacks=None, sample_weight=sample_weights,
             steps_per_epoch=steps_per_epoch
@@ -99,7 +99,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
 
         history = fsmodel.fit(
             #data['X_train'], data['y_train'],
-            dataset,
+            dataset.repeat(),
             epochs=1, batch_size=batch_size, verbose=verbose,
             callbacks=callbacks, sample_weight=sample_weights,
             steps_per_epoch=steps_per_epoch
