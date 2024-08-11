@@ -245,7 +245,7 @@ def extder_jbar_for_sigma(points,sigma):
     pointstensor=points
     with tf.GradientTape(persistent=True) as tape2:
         tape2.watch(pointstensor)
-        cpoints=point_vec_to_complex(pointstensor)
+        #cpoints=point_vec_to_complex(pointstensor)
         #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex64),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex64)),tf.complex64))#complexpoints vs noncomplex
         sigma = sigma(pointstensor)
         real_part = tf.math.real(sigma)
@@ -253,13 +253,38 @@ def extder_jbar_for_sigma(points,sigma):
 
         # Stack them along a new dimension
         sigmastack = tf.stack([real_part, imag_part], axis=-1)
-        dsigma = tape2.batch_jacobian(sigmastack, pointstensor)
+    dsigma = tape2.batch_jacobian(sigmastack, pointstensor)
     dx_sigma, dy_sigma = \
-        0.5*dsigma[:,:, :ncoords], \
-        0.5*dsigma[:,:, ncoords:]
-    dzbar_sigma = tf.complex(dx_sigma[:,0]-dy_sigma[:,1],dx_sigma[:,1]+dy_sigma[:,0])#do d(R+iI)/dzbar = (v_x +i v_y)/2 if v = R+iI
+        0.5*dsigma[..., :ncoords], \
+        0.5*dsigma[..., ncoords:]
+    dzbar_sigma = tf.complex(dx_sigma[...,0,:]-dy_sigma[...,1,:],dx_sigma[...,1,:]+dy_sigma[...,0,:])#do d(R+iI)/dzbar = (v_x +i v_y)/2 if v = R+iI
     #dzbar_sigma = tf.complex(tf.math.real(dx_sigma[:,0],tf.math.real(dy_sigma))#-tf.math.imag(dy_sigma),tf.math.imag(dx_sigma)+tf.math.real(dy_sigma))#do d(R+iI)/dzbar = (v_x +i v_y)/2 if v = R+iI
     return dzbar_sigma 
+
+def extder_j_for_sigma(points,sigma):
+    ncoords = tf.shape(points[0])[-1] // 2 
+    #pointstensor=tf.constant(points)
+    pointstensor=points
+    with tf.GradientTape(persistent=True) as tape2:
+        tape2.watch(pointstensor)
+        #cpoints=point_vec_to_complex(pointstensor)
+        #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex64),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex64)),tf.complex64))#complexpoints vs noncomplex
+        sigma = sigma(pointstensor)
+        real_part = tf.math.real(sigma)
+        imag_part = tf.math.imag(sigma)
+
+        # Stack them along a new dimension
+        sigmastack = tf.stack([real_part, imag_part], axis=-1)
+    dsigma = tape2.batch_jacobian(sigmastack, pointstensor)
+    #print(tf.shape(dsigma))
+    dx_sigma, dy_sigma = \
+        0.5*dsigma[..., :ncoords], \
+        0.5*dsigma[..., ncoords:]#i.e. d with respect to y
+    #print(tf.shape(dx_sigma))
+    dzbar_sigma = tf.complex(dx_sigma[...,0,:]+dy_sigma[...,1,:],dx_sigma[...,1,:]-dy_sigma[...,0,:])#do d(R+iI)/dz = (v_x -i v_y)/2 if v = R+iI
+    #dzbar_sigma = tf.complex(tf.math.real(dx_sigma[:,0],tf.math.real(dy_sigma))#-tf.math.imag(dy_sigma),tf.math.imag(dx_sigma)+tf.math.real(dy_sigma))#do d(R+iI)/dzbar = (v_x +i v_y)/2 if v = R+iI
+    return dzbar_sigma 
+
 
 # def compute_source_for_harmonicForm(points,HYMmetric,harmonicform_jbar,invmetric,pullbacks):
 #     ncoords = tf.shape(points[0])[-1] // 2 

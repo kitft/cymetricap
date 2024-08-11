@@ -216,7 +216,7 @@ class AlphaPrimeModel(FSModel):
 
         # fs metric
         
-        original_adjusted_met = self.phimodel(input_tensor, pb=pbs, j_elim=j_elim)
+        original_adjusted_met = self.phimodel(input_tensor, j_elim=j_elim)
         # return g_fs + \del\bar\del\phi
         return tf.math.add(original_adjusted_met, dd_shift_to_KP)
         
@@ -487,7 +487,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     print('kappa over 6 ')
     print(kappaover6) 
  
-    source_computing_class= Q_compiled_function(metricModel,realpoints[0:1])    
+    source_computing_class= Q_compiled_function(metricModel,realpoints[0:1],batch_size)    
     Q_values,euler_all_with_sqrtg = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
     #sources = euler_char/volume - Qs
     sources = euler_char/vol_k-Q_values
@@ -632,20 +632,23 @@ def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, bat
 
 
 class Q_compiled_function(tf.Module):
-    def __init__(self,phimodel,ptsrealtoinit):
+    def __init__(self,phimodel,ptsrealtoinit,batch_size):
         self.phimodel=phimodel
+        self.batch_size=batch_size
+        print("compiling")
         self.compute_christoffel_symbols_holo_not_pb = tf.function( 
             self.compute_christoffel_symbols_holo_not_pb_uncomp,
-            input_signature=(tf.TensorSpec(shape=[None, self.phimodel.ncoords*2], dtype=tf.float32),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float32),)
         )
         self.compute_riemann_m_nb_rb_sbUP = tf.function( 
             self.compute_riemann_m_nb_rb_sbUP_uncomp,
-            input_signature=(tf.TensorSpec(shape=[None, self.phimodel.ncoords*2], dtype=tf.float32),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float32),)
         )
         self.compute_Q = tf.function( 
             self.compute_Q_uncomp,
-            input_signature=(tf.TensorSpec(shape=[None, self.phimodel.ncoords*2], dtype=tf.float32),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float32),)
         )
+        print("compiled")
         #Now compile the various bits
         self.compute_christoffel_symbols_holo_not_pb(ptsrealtoinit[0:1])
         self.compute_riemann_m_nb_rb_sbUP(ptsrealtoinit[0:1])
@@ -745,6 +748,7 @@ def compute_batched_func(compute_Q,input_vector,batch_size,weights):
     resultall2=[]
     for i in range(0, len(input_vector), batch_size):
         batch = input_vector[i:i+batch_size]
+        #do the computation
         result = compute_Q(batch)
         resultall2.append(result)
         result_temp=np.concatenate(resultall2,axis=0)

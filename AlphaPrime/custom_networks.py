@@ -457,11 +457,28 @@ def monomialsWithMeta(cpoints,indices_to_take_reshaped):
     return monomials_tensor
 
 
-class get_degree_kphiandMmonomials(tf.Module):
-    def __init__(self,kphi,linebundleindices,indslist):
+class get_degree_kphiandMmonomials_general(tf.Module):
+    def __init__(self,kphi,linebundleindices,ambient_env_var,n_projective,kmoduli):
+        #define inds
+        self.ambient_env_var = ambient_env_var
+        self.degrees = self.ambient_env_var + 1
+        indskpModM=[tf.cast(get_monomial_indices(tf.ones(self.degrees[i]),kphi[i]+tf.math.abs(linebundleindices[i])),tf.int32) for i in range((kphi.shape)[-1])]
+        indsk=[tf.cast(get_monomial_indices(tf.ones(self.degrees[i]),kphi[i]),tf.int32) for i in range(len(kphi))] #conj is unnecessary here
+        #print(indsk)
+        self.indslist=(indskpModM,indsk)
         self.kphi=kphi
         self.linebundleindices=linebundleindices
-        self.indslist=indslist
+        
+        self.n_projective = n_projective
+        self.kmoduli = kmoduli
+        self.cumsum_degrees = tf.cumsum(self.degrees)
+        
+        # Corrected slice_indices calculation
+        starts = tf.concat([[0], self.cumsum_degrees[:-1]], axis=0)
+        ends = self.cumsum_degrees
+        self.slice_indices = tf.stack([starts, ends], axis=1)
+        #tf.print(indsk)
+        #tf.print(indskpModM)
 
     @tf.function
     def __call__(self,cpoints):
@@ -474,16 +491,20 @@ class get_degree_kphiandMmonomials(tf.Module):
 
             #indskpModM=get_monomial_indices(cpoints[0,0:2],kphi[i]+tf.math.abs(linebundleindices[i]))
             #indsk=get_monomial_indices(cpoints[0,0:2],kphi[i])#conj is unnecessary here
-
-            kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,2*i:2*i+2])**2,axis=-1),tf.complex64)
+            s = self.slice_indices[i,0]
+            e= self.slice_indices[i,1]
+            kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,s:e])**2,axis=-1),tf.complex64)
             if self.linebundleindices[i]>=0:
                 #kappa_i_kphi=kappa_i**self.kphi[i]
                 #monsbar=monomialsWithMeta(kphi[i],tf.math.conj(cpoints[:,2*i:2*i+2]),indsk)
                 #mons=monomialsWithMeta(kphi[i]+np.abs(linebundleindices[i]),cpoints[:,2*i:2*i+2],indskpModM)
-                mons=monomialsWithMeta(cpoints[:,2*i:2*i+2],indskpModM)
-                monsbar=monomialsWithMeta(tf.math.conj(cpoints[:,2*i:2*i+2]),indsk)
+                mons=monomialsWithMeta(cpoints[:,s:e],indskpModM)
+                monsbar=monomialsWithMeta(tf.math.conj(cpoints[:,s:e]),indsk)
 
                 kappa_i_kphi=kappa_i**self.kphi[i]
+                #print(mons.dtype)
+                #print(monsbar.dtype)
+                #rint(kappa_i_kphi.dtype)
                 outer_prod_of_mons_and_monsbar=tf.einsum('xi,xj,x->xij',mons,monsbar,1/kappa_i_kphi)
                 #tf.print('test',self.linebundleindices[i],indsk)
                 #tf.print('test',self.linebundleindices[i],indskpModM)
@@ -492,8 +513,8 @@ class get_degree_kphiandMmonomials(tf.Module):
             elif self.linebundleindices[i]<0:
                 #mons=monomialsWithMeta(kphi[i],cpoints[:,2*i:2*i+2],indsk)
                 #monsbar=monomialsWithMeta(kphi[i]+np.abs(linebundleindices[i]),tf.math.conj(cpoints[:,2*i:2*i+2]),indskpModM)
-                mons=monomialsWithMeta(cpoints[:,2*i:2*i+2],indsk)
-                monsbar=monomialsWithMeta(tf.math.conj(cpoints[:,2*i:2*i+2]),indskpModM)
+                mons=monomialsWithMeta(cpoints[:,s:e],indsk)
+                monsbar=monomialsWithMeta(tf.math.conj(cpoints[:,s:e]),indskpModM)
                 #print(monsbar)
                 #print(mons)
                 kappa_i_kphiplusmodM=kappa_i**tf.cast((self.kphi[i]+tf.math.abs(self.linebundleindices[i])),tf.complex64)
