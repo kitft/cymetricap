@@ -650,9 +650,9 @@ class Q_compiled_function(tf.Module):
         )
         print("compiled")
         #Now compile the various bits
-        self.compute_christoffel_symbols_holo_not_pb(ptsrealtoinit[0:100])
-        self.compute_riemann_m_nb_rb_sbUP(ptsrealtoinit[0:100])
-        self.compute_Q(ptsrealtoinit[0:100])
+        self.compute_christoffel_symbols_holo_not_pb(ptsrealtoinit[0:batch_size])
+        self.compute_riemann_m_nb_rb_sbUP(ptsrealtoinit[0:batch_size])
+        self.compute_Q(ptsrealtoinit[0:batch_size])
 
     def compute_christoffel_symbols_holo_not_pb_uncomp(self,x):
         x_vars = x
