@@ -168,7 +168,8 @@ class AlphaPrimeModel(FSModel):
         Returns:
             tf.tensor([bSize], tf.float32): Transition loss at each point.
         """
-        lpl_losses=tf.math.abs(laplacian(self.model,x,pullbacks,invmetrics)-(sources))
+        #cast to real
+        lpl_losses=tf.math.abs(tf.math.real(laplacian(self.model,x,pullbacks,invmetrics))-(sources))
         all_lpl_loss = lpl_losses**self.n[0]
         return all_lpl_loss
 
@@ -750,17 +751,18 @@ def compute_batched_func(compute_Q,input_vector,batch_size,weights):
         batch = input_vector[i:i+batch_size]
         if len(batch)<batch_size:
             #copy batch as many times as necessary until you get batch_size
-            batch=np.concatenate([batch for _ in range((batch_size//len(batch))+1)],axis=0)[0:batch_size]
+            batch=tf.concat([batch for _ in range((batch_size//len(batch))+1)],axis=0)[0:batch_size]
+            
         result=compute_Q(batch)
         resultall2.append(result)
-        result_temp=np.concatenate(resultall2,axis=0)
+        result_temp=tf.math.real(tf.concat(resultall2,axis=0))
         #fix incorrect length in final batch
         length=min(len(input_vector),len(result_temp))
         euler_all=weights[0:length]*result_temp[0:length]
         euler=tf.reduce_mean(euler_all)
         vol=tf.reduce_mean(weights[0:length])
         print("in " + str(i+batch_size) + " euler: " + str(euler.numpy())+  " vol " + str(vol.numpy()))
-    #concatenate and fix length issue
-    resultarr2=np.concatenate(resultall2,axis=0)[:len(input_vector)]
+    #concatenate and fix length issue, also cast to real as it should be/is real
+    resultarr2=tf.math.real(tf.concat(resultall2,axis=0)[:len(input_vector)])
     return resultarr2, euler_all
 
