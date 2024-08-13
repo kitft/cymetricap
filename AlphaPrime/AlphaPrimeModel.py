@@ -754,10 +754,13 @@ def compute_batched_func(compute_Q,input_vector,batch_size,weights):
         result=compute_Q(batch)
         resultall2.append(result)
         result_temp=np.concatenate(resultall2,axis=0)
-        euler_all=weights[0:len(result_temp)]*result_temp
+        #fix incorrect length in final batch
+        length=min(len(input_vector),len(result_temp))
+        euler_all=weights[0:length]*result_temp[0:length]
         euler=tf.reduce_mean(euler_all)
-        vol=tf.reduce_mean(weights[0:len(result_temp)])
+        vol=tf.reduce_mean(weights[0:length])
         print("in " + str(i+batch_size) + " euler: " + str(euler.numpy())+  " vol " + str(vol.numpy()))
-    resultarr2=np.concatenate(resultall2,axis=0)
+    #concatenate and fix length issue
+    resultarr2=np.concatenate(resultall2,axis=0)[:len(input_vector)]
     return resultarr2, euler_all
 
