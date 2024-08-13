@@ -800,10 +800,10 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
 
         tf.print("in", end, "euler:", euler_sum / float(min((i+1)*batch_size,total_length)), "vol", weight_sum/float(min((i+1)*batch_size,total_length)))
 
+    #stack, concatenate and fix length issue, also cast to real as it should be/is real
     resultarr2 = tf.math.real(result_array.stack())
+    resultarr2=tf.reshape(resultarr2,[-1])[:total_length]
 
-    #concatenate and fix length issue, also cast to real as it should be/is real
-    resultarr2 = resultarr2[:total_length]
 
     euler_all = weights[:total_length] * resultarr2
 
