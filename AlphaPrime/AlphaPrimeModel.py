@@ -784,7 +784,7 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
         #fix incorrect length in final batch
         if current_batch_size < batch_size:
             repeat_times = tf.cast(tf.math.ceil(batch_size / current_batch_size), tf.int32)
-            batch = tf.repeat(batch, repeats=[repeat_times])[0:batch_size]
+            batch=tf.tile(batch, [repeat_times,1])[0:batch_size]
 
         result = tf.math.real(compute_Q(batch))
         result_array = result_array.write(i, result)
