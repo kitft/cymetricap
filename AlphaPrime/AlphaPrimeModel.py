@@ -743,26 +743,68 @@ class Q_compiled_function(tf.Module):
     # added the factor of 8 back in
 
 
-def compute_batched_func(compute_Q,input_vector,batch_size,weights):
-    #returns the Q vector, and the sqrt(g) Q vector
-    print("computing batched with batch size " + str(batch_size) + " and total length " + str(len(input_vector)))
-    resultall2=[]
-    for i in range(0, len(input_vector), batch_size):
-        batch = input_vector[i:i+batch_size]
-        if len(batch)<batch_size:
-            #copy batch as many times as necessary until you get batch_size
-            batch=tf.concat([batch for _ in range((batch_size//len(batch))+1)],axis=0)[0:batch_size]
+# def compute_batched_func(compute_Q,input_vector,batch_size,weights):
+#     #returns the Q vector, and the sqrt(g) Q vector
+#     print("computing batched with batch size " + str(batch_size) + " and total length " + str(len(input_vector)))
+#     resultall2=[]
+#     for i in range(0, len(input_vector), batch_size):
+#         batch = input_vector[i:i+batch_size]
+#         if len(batch)<batch_size:
+#             #copy batch as many times as necessary until you get batch_size
+#             batch=tf.concat([batch for _ in range((batch_size//len(batch))+1)],axis=0)[0:batch_size]
             
-        result=compute_Q(batch)
-        resultall2.append(result)
-        result_temp=tf.math.real(tf.concat(resultall2,axis=0))
-        #fix incorrect length in final batch
-        length=min(len(input_vector),len(result_temp))
-        euler_all=weights[0:length]*result_temp[0:length]
-        euler=tf.reduce_mean(euler_all)
-        vol=tf.reduce_mean(weights[0:length])
-        print("in " + str(i+batch_size) + " euler: " + str(euler.numpy())+  " vol " + str(vol.numpy()))
-    #concatenate and fix length issue, also cast to real as it should be/is real
-    resultarr2=tf.math.real(tf.concat(resultall2,axis=0)[:len(input_vector)])
-    return resultarr2, euler_all
+#         result=compute_Q(batch)
+#         resultall2.append(result)
+#         result_temp=tf.math.real(tf.concat(resultall2,axis=0))
+#         #fix incorrect length in final batch
+#         length=min(len(input_vector),len(result_temp))
+#         euler_all=weights[0:length]*result_temp[0:length]
+#         euler=tf.reduce_mean(euler_all)
+#         vol=tf.reduce_mean(weights[0:length])
+#         print("in " + str(i+batch_size) + " euler: " + str(euler.numpy())+  " vol " + str(vol.numpy()))
+#     #concatenate and fix length issue, also cast to real as it should be/is real
+#     resultarr2=tf.math.real(tf.concat(resultall2,axis=0)[:len(input_vector)])
+#     return resultarr2, euler_all
 
+
+def compute_batched_func(compute_Q, input_vector, batch_size, weights):
+    total_length = tf.shape(input_vector)[0]
+    num_batches = (total_length + batch_size - 1) // batch_size
+
+    result_array = tf.TensorArray(tf.float32, size=num_batches)
+    euler_sum = tf.constant(0.0)
+    weight_sum = tf.constant(0.0)
+
+    for i in tf.range(num_batches):
+        start = i * batch_size
+        end = tf.minimum((i + 1) * batch_size, total_length)
+        batch = input_vector[start:end]
+
+        current_batch_size = tf.shape(batch)[0]
+        #fix incorrect length in final batch
+        if current_batch_size < batch_size:
+            repeat_times = tf.cast(tf.math.ceil(batch_size / current_batch_size), tf.int32)
+            batch = tf.repeat(batch, repeats=[repeat_times])[0:batch_size]
+
+        result = tf.math.real(compute_Q(batch))
+        result_array = result_array.write(i, result)
+
+        batch_weights = weights[start:end]
+        number_of_points=tf.shape(batch_weights)[0]#can be different to batch_size on laast iteration
+        batch_result = tf.math.real(result[:number_of_points])
+        batch_euler = tf.reduce_sum(batch_weights * batch_result)
+        batch_weight_sum = tf.reduce_sum(batch_weights)
+
+        euler_sum += batch_euler
+        weight_sum += batch_weight_sum
+
+        tf.print("in", end, "euler:", euler_sum / float(min((i+1)*batch_size,total_length)), "vol", weight_sum/float(min((i+1)*batch_size,total_length)))
+
+    resultarr2 = tf.math.real(result_array.stack())
+
+    #concatenate and fix length issue, also cast to real as it should be/is real
+    resultarr2 = resultarr2[:total_length]
+
+    euler_all = weights[:total_length] * resultarr2
+
+    return resultarr2, euler_all
