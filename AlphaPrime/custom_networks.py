@@ -484,7 +484,7 @@ class get_degree_kphiandMmonomials_general(tf.Module):
         #tf.print(indsk)
         #tf.print(indskpModM)
         self.n_holo_secs=product_of_tensor_lengths(indskpModM)
-        self.n_antiholo_secs=product_of_tensor_lengths(indsk.shape[0])
+        self.n_antiholo_secs=product_of_tensor_lengths(indsk)
         self.n_secs = self.n_holo_secs*self.n_antiholo_secs
 
     @tf.function
