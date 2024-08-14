@@ -477,9 +477,9 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     #print("hi")
     volume_cy = tf.math.reduce_mean(weights[:,0], axis=-1)# according to raw CY omega calculation and sampling...
     #print("hi")
-    vol_k = tf.math.reduce_mean(det_over_omega * weights[:,0], axis=-1)
+    vol_k_no6 = tf.math.reduce_mean(det_over_omega * weights[:,0], axis=-1)#missing factor of 6
     #print("hi")
-    kappaover6 = tf.cast(vol_k,tf.float32) / tf.cast(volume_cy,tf.float32)
+    kappaover6 = tf.cast(vol_k_no6,tf.float32) / tf.cast(volume_cy,tf.float32)
     #rint(ratio)
     #print("hi")
     tf.cast(kappaover6,tf.float32)
@@ -491,7 +491,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     source_computing_class= Q_compiled_function(metricModel,realpoints[0:batch_size],batch_size)    
     Q_values,euler_all_with_sqrtg = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
     #sources = euler_char/volume - Qs
-    sources = euler_char/vol_k-Q_values
+    sources = euler_char/(vol_k_no6/6)-Q_values
     sources_train=sources[:t_i]
     sources_val=sources[t_i:]
 
@@ -598,6 +598,8 @@ def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, bat
             alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.1
             print("cutting LR, multiplying by 0.1 - new LR: " + str(alphaprimemodel.optimizer.lr))
 
+        if tf.math.is_nan(hist1['loss'][-1]):
+            break
 
         #print("internal2")
         #print(permint.print_diff())

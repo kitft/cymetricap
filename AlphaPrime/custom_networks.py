@@ -456,6 +456,10 @@ def monomialsWithMeta(cpoints,indices_to_take_reshaped):
 
     return monomials_tensor
 
+from functools import reduce
+import operator
+def product_of_tensor_lengths(tensor_list):
+    return reduce(operator.mul, (tf.shape(tensor)[0] for tensor in tensor_list), 1)
 
 class get_degree_kphiandMmonomials_general(tf.Module):
     def __init__(self,kphi,linebundleindices,ambient_env_var,n_projective,kmoduli):
@@ -479,6 +483,9 @@ class get_degree_kphiandMmonomials_general(tf.Module):
         self.slice_indices = tf.stack([starts, ends], axis=1)
         #tf.print(indsk)
         #tf.print(indskpModM)
+        self.n_holo_secs=product_of_tensor_lengths(indskpModM)
+        self.n_antiholo_secs=product_of_tensor_lengths(indsk.shape[0])
+        self.n_secs = self.n_holo_secs*self.n_antiholo_secs
 
     @tf.function
     def __call__(self,cpoints):
