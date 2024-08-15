@@ -220,6 +220,53 @@ class AlphaPrimeModel(FSModel):
         original_adjusted_met = self.phimodel(input_tensor, j_elim=j_elim)
         # return g_fs + \del\bar\del\phi
         return tf.math.add(original_adjusted_met, dd_shift_to_KP)
+
+    def call_only_shift(self, input_tensor, j_elim=None):
+        r"""Prediction of the model.
+
+        .. math::
+
+            g_{\text{out}; ij} = g_{\text{FS}; ij} + \
+                partial_i \bar{\partial}_j \phi_{\text{NN}}
+
+        Args:
+            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            training (bool, optional): Not used. Defaults to True.
+            j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
+                Coordinates(s) to be eliminated in the pullbacks.
+                If None will take max(dQ/dz). Defaults to None.
+
+        Returns:
+            tf.tensor([bSize, nfold, nfold], tf.complex64):
+                Prediction at each point.
+        """
+        # nn prediction
+        with tf.GradientTape(persistent=False) as tape1:
+            tape1.watch(input_tensor)
+            with tf.GradientTape(persistent=False) as tape2:
+                tape2.watch(input_tensor)
+                # Need to disable training here, because batch norm
+                # and dropout mix the batches, such that batch_jacobian
+                # is no longer reliable.
+                phi = self.model(input_tensor, training=False)
+            d_phi = tape2.gradient(phi, input_tensor)
+        dd_phi = tape1.batch_jacobian(d_phi, input_tensor)
+        dx_dx_phi, dx_dy_phi, dy_dx_phi, dy_dy_phi = \
+            0.25*dd_phi[:, :self.ncoords, :self.ncoords], \
+            0.25*dd_phi[:, :self.ncoords, self.ncoords:], \
+            0.25*dd_phi[:, self.ncoords:, :self.ncoords], \
+            0.25*dd_phi[:, self.ncoords:, self.ncoords:]
+        dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)
+        pbs = self.pullbacks(input_tensor, j_elim=j_elim)
+        dd_phi = tf.einsum('xai,xij,xbj->xab', pbs, dd_phi, tf.math.conj(pbs))
+        zeta_of_3=1.2020569031595942853997381
+        dd_shift_to_KP = ((2*np.pi*self.alphaprime)**3)/4* zeta_of_3*dd_phi
+
+        # fs metric
+        
+        #original_adjusted_met = self.phimodel(input_tensor, j_elim=j_elim)
+        # return g_fs + \del\bar\del\phi
+        return dd_shift_to_KP#tf.math.add(original_adjusted_met, dd_shift_to_KP)
         
 
     def compile(self, custom_metrics=None, **kwargs):
