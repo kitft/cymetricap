@@ -691,19 +691,19 @@ def train_modelgreen(greenmodel, data_train, optimizer=None, epochs=50, batch_si
             greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.9
             print("cutting LR, multiplying by 0.9 - new LR: " + str(greenmodel.optimizer.lr))
 
-        #after 30 epochs, decrease learning rate by factor of 10
+        #after 30 epochs, decrease learning rate by factor of 2
         if epoch==10:
-            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.1
+            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.5
             print("cutting LR, multiplying by 0.1 - new LR: " + str(greenmodel.optimizer.lr))
 
-        # after 60 epochs, decrease lr by a factor of 10
+        # after 60 epochs, decrease lr by a factor of 2
         if epoch==20:
-            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.1
+            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.5
             print("cutting LR, multiplying by 0.1 - new LR: " + str(greenmodel.optimizer.lr))
 
-        #after 90 epochs, decrease lr by a factor of 10
+        #after 90 epochs, decrease lr by a factor of 5
         if epoch==30:
-            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.1
+            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.5
             print("cutting LR, multiplying by 0.1 - new LR: " + str(greenmodel.optimizer.lr))
 
         if tf.math.is_nan(hist1['loss'][-1]):
