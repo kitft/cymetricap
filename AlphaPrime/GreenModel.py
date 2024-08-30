@@ -503,7 +503,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     kahler_t=tf.math.real(BASIS['KMODULI'][0])
 
     special_point_complex=point_vec_to_complex(special_point)
-    special_pullback=point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0]
+    special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
 
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
 
