@@ -33,6 +33,8 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
         0.25*dd_phi[:, :ncoords, ncoords:], \
         0.25*dd_phi[:, ncoords:, ncoords:]
     dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)# this should be d_dbar
+    #this is d_dbar_phi as it's (dx-idy)(dx+idy), so +(dxdy - dy dx), assuming the above labels are correct
+
     # this second imaginary part is a vector equation, so whilst the result is hermitian it is not necessarily real?
     # comes from df/dz = f_x -i f_y/2. Do it twice in the correct order!
     # the result is dy_dx_phi has the y index first, then the x index
@@ -47,10 +49,9 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
                     #Coordinates(s) to be eliminated in the pullbacks.
                     #If None will take max(dQ/dz). Defaults to None.
                     #PULLBACKS SHOULD BE GIVEN WITH THIS? Or decide I want to use none?
-    #factor of 2 because the laplacian is 2g^ab da db 2gCY∂a∂ ̄b,. pb_dd_phi_Pbbar is just
-    #no, ditch the factor of two!
+    #note - this is the laplacian without a minus sign, and without the factor of 2 (i.e. it's a 'complex laplacian')
     print("hi - fixed")
-    gdd_phi = tf.einsum('xba,xai,xij,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
+    gdd_phi = tf.einsum('xba,xai,xji,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
     return gdd_phi
 
 
