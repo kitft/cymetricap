@@ -199,7 +199,7 @@ class LaplacianNoSourceCallback(tfk.callbacks.Callback):
             epoch (int): epoch
             logs (dict, optional): history.history. Defaults to None.
         """
-        laplacian = laplacian_measure_tf(self.model, self.data)
+        laplacian = laplacian_measure_tf_no_source(self.model, self.data)
 
         cb_res = laplacian.numpy().tolist()
         logs['laplacian_val'] = cb_res
