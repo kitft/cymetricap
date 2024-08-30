@@ -125,7 +125,7 @@ class GreenModel(FSModel):
         self.sigmoid_for_nn = lambda x: sigmoid_like_function(x, transition_point=0.1, steepness=2)
 
         self.special_point=special_point
-        self.special_pullback=tf.cast(self.pullback(tf.expand_dims(special_point,axis=0)),dtype=tf.complex64)[0]
+        self.special_pullback=tf.cast(self.pullbacks(point_vec_to_complex((tf.expand_dims(special_point,axis=0))))[0],dtype=tf.complex64)
         self.special_metric=self.metricModel(self.special_point)
         self.kahler_t = float(self.BASIS['KMODULI'])
         self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
@@ -503,7 +503,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     kahler_t=BASIS['KMODULI'][0]
 
     special_point_complex=point_vec_to_complex(special_point)
-    special_pullback=point_gen.pullbacks(tf.expand_dims(special_point,axis=0))[0]
+    special_pullback=point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0]
 
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, t=kahler_t, plot_losses=False)
 
@@ -514,8 +514,8 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     points_around_special=get_points_around_special(special_point_complex,radius,num_points,point_gen,uniform_on_radius=True,min_radius=min_radius,final_matrix=final_matrix,kahler_t=kahler_t)
     special_points_train=points_around_special[0:t_i]
     special_points_val=points_around_special[t_i:]
-    special_pullback_train=point_gen.pullbacks(special_points_train)
-    special_pullback_val=point_gen.pullbacks(special_points_val)
+    special_pullback_train=point_gen.pullbacks(point_vec_to_complex(special_points_train))
+    special_pullback_val=point_gen.pullbacks(point_vec_to_complex(special_points_val))
     inv_mets_special_train=tf.linalg.inv(metricModel(special_points_train))
     inv_mets_special_val=tf.linalg.inv(metricModel(special_points_val))
  
