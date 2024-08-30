@@ -874,7 +874,7 @@ class BiholoModelFuncGENERALforHYMinv(tf.keras.Model):
                             for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
         self.layers_list += [SquareDenseVarNoAct(input_dim=layer_sizes[len(layer_sizes)-2],units=layer_sizes[len(layer_sizes)-1],stddev=set_stddev)]
         #i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
-        self.layers_list+=[tf.keras.layers.Dense(units=1, use_bias=False,kernel_initializer=tf.keras.initializers.Ones)]# add the extra free parameter after the log
+        self.layers_list+=[tf.keras.layers.Dense(units=layer_sizes[-1], use_bias=False,kernel_initializer=tf.keras.initializers.Ones)]# add the extra free parameter after the log
         self.BASIS=BASIS
         self.nCoords=tf.reduce_sum(tf.cast(BASIS['AMBIENT'],tf.int32)+1)
         self.ambient=BASIS['AMBIENT']
