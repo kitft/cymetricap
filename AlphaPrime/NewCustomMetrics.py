@@ -34,7 +34,7 @@ class LaplacianLoss(tfk.metrics.Metric):
         self.laplacian_loss.assign(0)
         self.count.assign(0)
 
-class LaplaciaSpecialLoss(tfk.metrics.Metric):
+class LaplacianSpecialLoss(tfk.metrics.Metric):
     def __init__(self, name='laplacian_special_loss', **kwargs):
         super(LaplacianSpecialLoss, self).__init__(name=name, **kwargs)
         self.laplacian_loss = self.add_weight(name='lpls', initializer='zeros')
