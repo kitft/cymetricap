@@ -530,7 +530,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     # Update new_np to reflect the new number of points
     new_np = tf.shape(points)[0]
 
-    t_i = int((1-val_split)*new_np)
+    t_i = int((1-val_split)*int(new_np))
     
 
     if normalize_to_vol_j:
