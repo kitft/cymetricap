@@ -137,6 +137,7 @@ class GreenModel(FSModel):
             metricijbar=self.final_matrix
         )
         self.test_pulled_back_matrix()
+        self.dim_output=self.model.dim_output
 
     def test_pulled_back_matrix(self):
         actual_metric_from_matrix=compute_Gijbar_from_Hijbar(self.final_matrix,point_vec_to_complex(self.special_point),self.kahler_t)
