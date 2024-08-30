@@ -969,11 +969,11 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
 
 
 
-def compute_Gijbar_from_Hijbar(Hijbar,cpoint,t=1.0):
+def compute_Gijbar_from_Hijbar(Hijbar,cpoint,kahler_t=1.0):
     H = tf.einsum('iJ,i,J->',Hijbar,cpoint,tf.math.conj(cpoint))
     Hijbar_over_H = Hijbar/H
     HssH_over_H2 = tf.einsum('kJ,k,M,iM->iJ',Hijbar_over_H,cpoint,tf.math.conj(cpoint),Hijbar_over_H)/H**2
-    return tf.cast(t,tf.complex64)*(Hijbar_over_H-HssH_over_H2)
+    return tf.cast(kahler_t,tf.complex64)*(Hijbar_over_H-HssH_over_H2)
 
 
 def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, kahler_t=1.0):
@@ -1232,7 +1232,7 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
     print(rounded_matrix)
     print("eigvals: ",np.round(tf.linalg.eigvals(final_matrix),4))
 
-    actual_metric_locally=compute_Gijbar_from_Hijbar(final_matrix,point_vec_to_complex(special_point),t=1.0)
+    actual_metric_locally=compute_Gijbar_from_Hijbar(final_matrix,point_vec_to_complex(special_point),kahler_t=1.0)
     # Pullback the final matrix to the 3x3 matrix using einsum in a one-liner
     pulled_back_final_matrix = tf.einsum('ai,BJ,iJ->aB', special_pullback,tf.math.conj(special_pullback), actual_metric_locally)
 
