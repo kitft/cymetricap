@@ -207,6 +207,20 @@ class GreenModel(FSModel):
         all_lpl_loss = lpl_losses**self.n[0]
         return all_lpl_loss
 
+    def HYM_measure_val(self,greenmodel,datagreen):
+        #arguments: betamodel, databeta
+        #outputs: weighted by the point weights, the failure to solve the equation i.e.:
+        # 1: number: sum(w*|laplacian(beta)-rho|)/|sum(w.|rho|)|, where w is the point weight, rho is the source
+        # 2: vector: w*|laplacian(beta)-rho|/|sum(w.|rho|)|, where w is the point weight, rho is the source
+        # 3: number: w*|laplacian(beta)-rho|)/sum(w.|rho|), where w is the point weight, rho is the source
+    
+        vals=datagreen['y_val'][:,0]*tf.math.abs(-2*laplacian(greenmodel,datagreen['X_val'],datagreen['val_pullbacks'],datagreen['inv_mets_val'])-datagreen['sources_val'])
+        val=tf.reduce_mean(vals, axis=-1)
+        absolutevalsofsourcetimesweight=datagreen['y_val'][:,0]*tf.math.abs(datagreen['sources_val'])
+        mean_ofabsolute_valofsourcetimesweight=tf.reduce_mean(absolutevalsofsourcetimesweight, axis=-1)
+
+        return val/mean_ofabsolute_valofsourcetimesweight, vals/mean_ofabsolute_valofsourcetimesweight,vals/absolutevalsofsourcetimesweight
+
 
     def call(self, input_tensor, j_elim=None):
         r"""Prediction of the model.
