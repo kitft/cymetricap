@@ -973,7 +973,7 @@ def compute_Gijbar_from_Hijbar(Hijbar,cpoint,t=1.0):
     H = tf.einsum('iJ,i,J->',Hijbar,cpoint,tf.math.conj(cpoint))
     Hijbar_over_H = Hijbar/H
     HssH_over_H2 = tf.einsum('kJ,k,M,iM->iJ',Hijbar_over_H,cpoint,tf.math.conj(cpoint),Hijbar_over_H)/H**2
-    return t*(Hijbar_over_H-HssH_over_H2)
+    return tf.cast(t,tf.complex64)*(Hijbar_over_H-HssH_over_H2)
 
 
 def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, t=1.0):
