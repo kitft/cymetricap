@@ -124,7 +124,7 @@ class GreenModel(FSModel):
         self.sigmoid_for_nn = lambda x: sigmoid_like_function(x, transition_point=0.1, steepness=2)
 
         self.special_point=special_point
-        self.special_pullback=tf.cast(self.pullbacks(point_vec_to_complex((tf.expand_dims(special_point,axis=0))))[0],dtype=tf.complex64)
+        self.special_pullback=tf.cast(self.pullbacks((tf.expand_dims(special_point,axis=0)))[0],dtype=tf.complex64)
         self.special_metric=self.metricModel(self.special_point)
         self.kahler_t = tf.math.real(self.BASIS['KMODULI'][0])
         self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
