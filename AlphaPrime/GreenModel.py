@@ -55,7 +55,7 @@ class GreenModel(FSModel):
         :py:mod:`cymetric.models.metrics` and
         :py:mod:`cymetric.models.callbacks`.
     """
-    def __init__(self, tfmodel, BASIS, metricModel, special_point,alpha=None, **kwargs):
+    def __init__(self, tfmodel, BASIS, metricModel, special_point, final_matrix,alpha=None, **kwargs):
         r"""FreeModel is a tensorflow model predicting CY metrics. 
         
         The output is
@@ -124,15 +124,30 @@ class GreenModel(FSModel):
         self.sigmoid_for_nn = lambda x: sigmoid_like_function(x, transition_point=0.1, steepness=2)
 
         self.special_point=special_point
-        self.special_pullback=tf.cast(self.pullbacks((tf.expand_dims(special_point,axis=0)))[0],dtype=tf.complex64)
+        self.special_pullback=tf.cast(self.pullbacks((tf.expand_dims(special_point,axis=0)))[0],dtype=tf.complex64)#self.pullbacks takes real arguments
         self.special_metric=self.metricModel(tf.expand_dims(special_point,axis=0))[0]
+        self.final_matrix=final_matrix
+        # Check if special_metric is the pullback of final_matrix
+        pulled_back_matrix = tf.einsum('ai,BJ,iJ->aB', 
+                                       self.special_pullback,tf.math.conj(self.special_pullback), 
+                                       self.final_matrix)
+        
+        # Compare the pulled back matrix with special_metric
+        is_equal = tf.reduce_all(tf.math.abs(pulled_back_matrix - self.special_metric) < 1e-6)
+        tf.print("Is special_metric the pullback of final_matrix?", is_equal)
+        
+        if not is_equal:
+            tf.print("Warning: special_metric is not the pullback of final_matrix")
+            tf.print("Pulled back matrix:", pulled_back_matrix)
+            tf.print("Special metric:", self.special_metric)
+
 
         self.kahler_t = tf.math.real(self.BASIS['KMODULI'][0])
         self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
             point_vec_to_complex(self.special_point),
             cpoints,
             kahler_t=self.kahler_t,
-            metricijbar=self.special_metric
+            metricijbar=self.final_matrix
         )
 
 
@@ -506,7 +521,6 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
 
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
-
     radius=0.05
     min_radius=0.005
     num_points=len(ys)
@@ -529,6 +543,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
                         special_points_train=special_points_train,
                         special_pullback_train=special_pullback_train,
                         inv_mets_special_train=inv_mets_special_train,
+                        final_matrix=final_matrix,
                         X_val=X_val,
                         y_val=y_val,
                         val_pullbacks=val_pullbacks,
@@ -536,6 +551,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
                         special_points_val=special_points_val,
                         special_pullback_val=special_pullback_val,
                         inv_mets_special_val=inv_mets_special_val,
+                        final_matrix_copy=final_matrix,
                         )
     print("print 'kappa/6'")
     return kappaover6#point_gen.compute_kappa(points, weights, omega)
