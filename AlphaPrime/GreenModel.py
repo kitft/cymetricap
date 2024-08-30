@@ -135,6 +135,8 @@ class GreenModel(FSModel):
         # Compare the pulled back matrix with special_metric
         is_equal = tf.reduce_all(tf.math.abs(pulled_back_matrix - self.special_metric) < 1e-6)
         tf.print("Is special_metric the pullback of final_matrix?", is_equal)
+        tf.print(pulled_back_matrix)
+        tf.print(self.special_metric)
         
         if not is_equal:
             tf.print("Warning: special_metric is not the pullback of final_matrix")
@@ -230,7 +232,7 @@ class GreenModel(FSModel):
         
 
     def local_model_of_greens_function(self,geodesic_distance):
-        area_of_unit_sphere_in_2ndim=2*np.pi**(self.nfold)/tf.math.exp(tf.math.lgamma(self.nfold))
+        area_of_unit_sphere_in_2ndim=2*np.pi**(float(self.nfold))/tf.math.exp(tf.math.lgamma(float(self.nfold)))
         c_n = -1/((2*self.nfold-2)*area_of_unit_sphere_in_2ndim)
         if int(self.nfold)!=2:
             return c_n*geodesic_distance**(-(self.nfold-2))
