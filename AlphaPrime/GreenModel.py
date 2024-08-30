@@ -485,7 +485,8 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
         os.makedirs(dirname)
     
     n_p = len(data['X_train']) + len(data['X_val'])
-    new_np = int(round(n_p/(1-ltails-rtails)))
+    new_np_old = int(round(n_p/(1-ltails-rtails)))
+    new_np=int(new_np_old*1.1)
     pwo = point_gen.generate_point_weights(new_np, omega=True)
     if len(pwo) < new_np:
         new_np = int((new_np-len(pwo))/len(pwo)*new_np + 100)
@@ -503,6 +504,32 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     
     points= pwo['point'][mask]
     points = tf.cast(points,tf.complex64)
+    
+    # Convert special_point to complex tensor
+    special_point = tf.cast(special_point, tf.complex64)
+    kahler_t=tf.math.real(BASIS['KMODULI'][0])
+    special_point_complex=point_vec_to_complex(special_point)
+    special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
+    final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
+    
+    # Calculate geodesic distances from each point to special_point using final_matrix
+    distances = vectorized_geodesic_distance_CPn(point_vec_to_complex(special_point), points, kahler_t=1.0, metricijbar=final_matrix)
+    
+    # Create a mask for points that are far enough from special_point
+    mask = tf.reduce_all(distances > min_radius, axis=-1)
+    
+    # Apply the mask to points, weights, and omega
+    points = tf.boolean_mask(points, mask)
+    weights = tf.boolean_mask(weights, mask)
+    omega = tf.boolean_mask(omega, mask)
+    
+    # Restrict to new_np_old number of points
+    points = points[:new_np_old]
+    weights = weights[:new_np_old]
+    omega = omega[:new_np_old]
+    
+    # Update new_np to reflect the new number of points
+    new_np = tf.shape(points)[0]
 
     t_i = int((1-val_split)*new_np)
     
@@ -592,17 +619,13 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     # print(kappaover6) 
 
 
-    kahler_t=tf.math.real(BASIS['KMODULI'][0])
 
-    special_point_complex=point_vec_to_complex(special_point)
-    special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
 
     nfold = tf.shape(special_pullback)[0].numpy()
     volume_for_sources = tf.cast(vol_k_no6 / np.math.factorial(nfold),tf.float32)
     print('Volume for sources: ', volume_for_sources)
 
 
-    final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
     # radius=0.05
     # min_radius=0.005
 
