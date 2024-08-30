@@ -506,14 +506,13 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     points = tf.cast(points,tf.complex64)
     
     # Convert special_point to complex tensor
-    special_point = tf.cast(special_point, tf.complex64)
     kahler_t=tf.math.real(BASIS['KMODULI'][0])
     special_point_complex=point_vec_to_complex(special_point)
     special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
     
     # Calculate geodesic distances from each point to special_point using final_matrix
-    distances = vectorized_geodesic_distance_CPn(point_vec_to_complex(special_point), points, kahler_t=1.0, metricijbar=final_matrix)
+    distances = vectorized_geodesic_distance_CPn(special_point_complex, points, kahler_t=1.0, metricijbar=final_matrix)
     
     # Create a mask for points that are far enough from special_point
     mask = tf.reduce_all(distances > min_radius, axis=-1)
@@ -1291,7 +1290,13 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
     Raises:
         tf.errors.InvalidArgumentError: If optimization fails due to singular matrices.
     """
-
+    # Check if special_point is a real tensor
+    if not tf.is_tensor(special_point):
+        raise TypeError("special_point must be a tensor")
+    
+    if special_point.dtype not in [tf.float32, tf.float64]:
+        raise TypeError(f"Expected special_point to be a real tensor (float32 or float64), but got {special_point.dtype}")
+    
     n=tf.shape(special_pullback)[-1]
     kernel_basis = analyze_pullback_kernel(special_pullback, special_point)
     v_list = tf.transpose(kernel_basis)
