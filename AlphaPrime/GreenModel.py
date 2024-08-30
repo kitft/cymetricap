@@ -8,8 +8,8 @@ from pympler import tracker
 def point_vec_to_complex(p):
     #if len(p) == 0: 
     #    return tf.constant([[]])
-    plen = len(p[0])//2
-    return tf.complex(p[:, :plen],p[:, plen:])
+    plen = (p.shape[-1])//2
+    return tf.complex(p[..., :plen],p[..., plen:])
 
 class GreenModel(FSModel):
     r"""FreeModel from which all other models inherit.
@@ -502,7 +502,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
 
     kahler_t=BASIS['KMODULI'][0]
 
-    special_point_complex=point_gen.complex_coords(special_point)
+    special_point_complex=point_vec_to_complex(special_point)
     special_pullback=point_gen.pullbacks(special_point)
 
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, t=kahler_t, plot_losses=False)
