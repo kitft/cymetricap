@@ -517,8 +517,8 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     special_points_val=points_around_special[t_i:]
     special_pullback_train=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_train)),tf.complex64)
     special_pullback_val=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_val)),tf.complex64)
-    inv_mets_special_train=tf.linalg.inv(metricModel(special_points_train))
-    inv_mets_special_val=tf.linalg.inv(metricModel(special_points_val))
+    inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),tf.complex64)
+    inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),tf.complex64)
  
     
     np.savez_compressed(os.path.join(dirname, 'dataset'),
