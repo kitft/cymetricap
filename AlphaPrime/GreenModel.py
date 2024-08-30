@@ -250,6 +250,21 @@ class GreenModel(FSModel):
         nn_prediction_out=tf.einsum('...i,...i->...',to_dot_to_nn,nn_prediction)
 
         return local_model+nn_prediction_out
+
+    @tf.function
+    def local_model_of_greens_function(self,cpoints):
+        # Check if cpoints is complex
+        if not tf.dtypes.as_dtype(cpoints.dtype).is_complex:
+            raise TypeError(f"Expected cpoints to be a complex tensor, but got {cpoints.dtype}")
+        
+        # Compute geodesic distance
+        geodesic_distance = self.geodesic_distance_vec_function(cpoints)
+        
+        # Compute local model
+        local_model = self.local_model_of_greens_function(geodesic_distance)
+        
+        return local_model
+
         
 
     def local_model_of_greens_function(self,geodesic_distance):
