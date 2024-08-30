@@ -515,9 +515,9 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     distances = vectorized_geodesic_distance_CPn(special_point_complex, points, kahler_t=1.0, metricijbar=final_matrix)
     
     # Create a mask for points that are far enough from special_point
-    mask = tf.reduce_all(distances > min_radius, axis=-1)
+    mask = distances > min_radius
     
-    # Apply the mask to points, weights, and omega
+    # Apply the mask to poins, weights, and omega
     points = tf.boolean_mask(points, mask)
     weights = tf.boolean_mask(weights, mask)
     omega = tf.boolean_mask(omega, mask)
