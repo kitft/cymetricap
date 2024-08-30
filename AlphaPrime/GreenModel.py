@@ -460,10 +460,57 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     
-    X_train=tf.cast(data['X_train'],tf.float32)
-    y_train=tf.cast(data['y_train'],tf.float32)
-    X_val=tf.cast(data['X_val'],tf.float32)
-    y_val=tf.cast(data['y_val'],tf.float32)
+    n_p = len(data['X_train']) + len(data['X_val'])
+    new_np = int(round(n_p/(1-ltails-rtails)))
+    pwo = point_gen.generate_point_weights(new_np, omega=True)
+    if len(pwo) < new_np:
+        new_np = int((new_np-len(pwo))/len(pwo)*new_np + 100)
+        pwo2 = point_gen.generate_point_weights(new_np, omega=True)
+        pwo = np.concatenate([pwo, pwo2], axis=0)
+    new_np = len(pwo)
+    sorted_weights = np.sort(pwo['weight'])
+    lower_bound = sorted_weights[round(ltails*new_np)]
+    upper_bound = sorted_weights[round((1-rtails)*new_np)-1]
+    mask = np.logical_and(pwo['weight'] >= lower_bound,
+                          pwo['weight'] <= upper_bound)
+    weights = np.expand_dims(pwo['weight'][mask], -1)
+    omega = np.expand_dims(pwo['omega'][mask], -1)
+    omega = np.real(omega * np.conj(omega))
+    
+    #points = tf.cast(points,tf.complex64)
+    
+
+    if normalize_to_vol_j:
+        pbs = point_gen.pullbacks(points)
+        fs_ref = point_gen.fubini_study_metrics(points, vol_js=np.ones_like(point_gen.kmoduli))
+        fs_ref_pb = tf.einsum('xai,xij,xbj->xab', pbs, fs_ref, np.conj(pbs))
+        aux_weights = omega.flatten() / weights.flatten()
+        norm_fac = point_gen.vol_j_norm / np.mean(np.real(np.linalg.det(fs_ref_pb)) / aux_weights)
+        #print("point_gen.vol_j_norm")
+        #print(point_gen.vol_j_norm)
+        weights = norm_fac * weights # I.E. this is vol_j_norm/ integral of g_FS. That is, we normalise our volume to d_rst 1 1 1, when it is calculated with integral of omega wedge omegabar, i.e. just the weights. I.e. sum over just weights is that.
+        # not sure if the above explanation is correct
+
+    X_train = np.concatenate((points[:t_i].real, points[:t_i].imag), axis=-1)
+    y_train = np.concatenate((weights[:t_i], omega[:t_i]), axis=1)
+    X_val = np.concatenate((points[t_i:].real, points[t_i:].imag), axis=-1)
+    y_val = np.concatenate((weights[t_i:], omega[t_i:]), axis=1)
+
+    
+    
+    realpoints=tf.concat((tf.math.real(points), tf.math.imag(points)), axis=-1)
+    realpoints=tf.cast(realpoints,tf.float32)
+
+    X_train=tf.cast(X_train,tf.float32)
+    y_train=tf.cast(y_train,tf.float32)
+    X_val=tf.cast(X_val,tf.float32)
+    y_val=tf.cast(y_val,tf.float32)
+    #realpoints=tf.cast(realpoints,tf.float32)
+
+    #X_train=tf.cast(data['X_train'],tf.float32)
+    #y_train=tf.cast(data['y_train'],tf.float32)
+    #X_val=tf.cast(data['X_val'],tf.float32)
+    #y_val=tf.cast(data['y_val'],tf.float32)
     ncoords=int(len(X_train[0])/2)
 
     #y_train=data['y_train']
