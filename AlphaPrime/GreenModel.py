@@ -517,8 +517,8 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     special_points_val=points_around_special[t_i:]
     special_pullback_train=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_train)),tf.complex64)
     special_pullback_val=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_val)),tf.complex64)
-    inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),tf.complex64)
-    inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),tf.complex64)
+    inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),tf.complex64)# this cast is extraneous
+    inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),tf.complex64)# this cast is extraneous
  
     
     np.savez_compressed(os.path.join(dirname, 'dataset'),
@@ -541,7 +541,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     return kappaover6#point_gen.compute_kappa(points, weights, omega)
 
 
-def train_modelalpha(greenmodel, data_train, optimizer=None, epochs=50, batch_sizes=[64, 10000],
+def train_modelgreen(greenmodel, data_train, optimizer=None, epochs=50, batch_sizes=[64, 10000],
                 verbose=1, custom_metrics=[], callbacks=[], sw=False):
     r"""Training loop for fixing the Kähler class. It consists of two 
     optimisation steps. 
