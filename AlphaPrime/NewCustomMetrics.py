@@ -104,7 +104,7 @@ def laplacian_special_measure_loss(model, validation_data):
         tf.float32: Transition loss measure
     """
     X_val = validation_data["special_points_val"]
-    pullbacks = validation_data["special_pullback_val"]
+    pullbacks = validation_data["special_pullbacks_val"]
     invmetrics = validation_data["inv_mets_special_val"]
     sources = validation_data["sources_special_val"]
 
