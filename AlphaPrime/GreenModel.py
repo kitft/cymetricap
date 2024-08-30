@@ -4,6 +4,7 @@ import tensorflow as tf
 import os
 import numpy as np
 from pympler import tracker
+import numpy as np
 
 def point_vec_to_complex(p):
     #if len(p) == 0: 
