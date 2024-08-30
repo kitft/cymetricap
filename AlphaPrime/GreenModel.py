@@ -477,7 +477,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     omega = np.expand_dims(pwo['omega'][mask], -1)
     omega = np.real(omega * np.conj(omega))
     
-    #points = tf.cast(points,tf.complex64)
+    points = tf.cast(points,tf.complex64)
     
 
     if normalize_to_vol_j:
