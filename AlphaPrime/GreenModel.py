@@ -1027,7 +1027,7 @@ def optimize_matrix( point, pullback, g_CY, v_list, weights, learning_rate=0.1, 
     tuple: Optimized vector, final loss, satisfaction measure, and lists of losses.
     """
     cpoint = point_vec_to_complex(point)
-    n = tf.shape(special_pullback)[-1]  # Dimension of the square matrix
+    n = tf.shape(pullback)[-1]  # Dimension of the square matrix
     m=n**2
     
     # Initialize parameters for all initializations
