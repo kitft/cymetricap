@@ -4,7 +4,6 @@ import tensorflow as tf
 import os
 import numpy as np
 from pympler import tracker
-import numpy as np
 
 def point_vec_to_complex(p):
     #if len(p) == 0: 
@@ -1201,7 +1200,6 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
 
     if plot_losses:
         import matplotlib.pyplot as plt
-        import numpy as np
 
         # Find the index of the smallest total loss
         best_index = np.argmin(np.array(total_losses[-1]))
