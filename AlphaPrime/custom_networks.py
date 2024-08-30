@@ -942,7 +942,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
 #         #return  -self.layers_list[-1](tf.math.log(inputs))
     
 class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
-    def __init__(self, layer_sizes,BASIS,activation=tf.square,stddev=0.1,use_zero_network=False):
+    def __init__(self, layer_sizes,BASIS,activation=tf.square,stddev=0.1,use_zero_network=False,constant_multiplier=1.0):
         super().__init__()
         #self.layers_list = [tf.keras.layers.Dense(units=size, activation=tf.math.square, use_bias=False)
         #set_stddev= 0. if use_zero_network else stddev#decide init
@@ -974,6 +974,7 @@ class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
         self.kmoduli=BASIS['KMODULI']
         self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
         self.dim_output=layer_sizes[-1]
+        self.constant_multiplier=constant_multiplier
                             
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
@@ -999,7 +1000,7 @@ class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
         #print("new inv")
         #return  self.layers_list[-1](inputs)/self.layers_list2[-1](inputs2)
         out=self.layers_list[-1](tf.math.log(tf.math.abs(inputs)))-self.layers_list2[-1](tf.math.log(tf.math.abs(inputs2)))
-        return tf.clip_by_value(out,-1e6,1e6)
+        return self.constant_multiplier*tf.clip_by_value(out,-1e6,1e6)
         #return  -self.layers_list[-1](tf.math.log(inputs))
 
 class BiholoModelFuncGENERALforSigma(tf.keras.Model):
