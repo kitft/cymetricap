@@ -961,12 +961,12 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
 
         # Convert the points to tf.Variable so they're trainable
         realpoints = tf.Variable(realpoints, dtype=tf.float32)
-        print(pg.BASIS.keys())
-        if int(tf.math.real(pg.BASIS['NFOLD']))==1:
+        nfold = (len(cpoints)-2)
+        if nfold==1:
             first_decrease_checkpoint=3e-4
             second_decrease_checkpoint=5e-5
 
-        if int(tf.math.real(pg.BASIS['NFOLD']))==3:
+        if nfold==3:
             first_decrease_checkpoint=1e-4
             second_decrease_checkpoint=1e-5
 
