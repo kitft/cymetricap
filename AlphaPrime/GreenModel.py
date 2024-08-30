@@ -100,7 +100,7 @@ class GreenModel(FSModel):
         """
         super(GreenModel, self).__init__(BASIS=BASIS, **kwargs)
         self.model = tfmodel
-        self.NLOSS = 2
+        self.NLOSS = 3
         # variable or constant or just tensor?
         if alpha is not None:
             self.alpha = [tf.Variable(a, dtype=tf.float32) for a in alpha]
