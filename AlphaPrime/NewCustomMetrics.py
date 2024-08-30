@@ -156,7 +156,7 @@ class LaplacianNoSourceCallback(tfk.callbacks.Callback):
             initial (bool, optional): If True does one iteration before training.
                 Defaults to False.
         """
-        super(LaplacianCallback, self).__init__()
+        super(LaplacianNoSourceCallback, self).__init__()
         self.data=validation_data
         self.initial=initial
         
