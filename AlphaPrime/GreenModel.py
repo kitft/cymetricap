@@ -131,7 +131,7 @@ class GreenModel(FSModel):
         self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
             self.special_point,
             cpoints,
-            t=self.kahler_t,
+            kahler_t=self.kahler_t,
             metricijbar=self.special_metric
         )
 
@@ -922,8 +922,8 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
     initial_points = generate_uniform_ball_c(special_point_complex, radius, num_points_to_generate, uniform_on_radius=uniform_on_radius)
     initial_points= pg._rescale_points(np.array(initial_points))
     # Calculate distances using vectorized geodesic distance for CPn and then the same with final_matrix
-    initial_distances_CPn = vectorized_geodesic_distance_CPn(special_point_complex, initial_points, t=kahler_t)
-    initial_distances_matrix = vectorized_geodesic_distance_CPn(special_point_complex, initial_points, t=kahler_t, metricijbar=final_matrix)
+    initial_distances_CPn = vectorized_geodesic_distance_CPn(special_point_complex, initial_points, kahler_t=kahler_t)
+    initial_distances_matrix = vectorized_geodesic_distance_CPn(special_point_complex, initial_points, kahler_t=kahler_t, metricijbar=final_matrix)
     #delete initial_points if they are too close to special_point_complex
     
 
@@ -931,8 +931,8 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
     # Perform gradient descent
     optimized_points, final_losses = gradient_descent_vectorized(initial_points, poly_normed_abs_val_takes_real,pg)
     optimized_points=tf.constant(pg._rescale_points(optimized_points.numpy()))
-    optimized_distances_CPn = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, t=kahler_t)
-    optimized_distances_matrix = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, t=kahler_t, metricijbar=final_matrix)
+    optimized_distances_CPn = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t)
+    optimized_distances_matrix = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t, metricijbar=final_matrix)
 
 
     mask = optimized_distances_matrix.numpy() > min_radius*kahler_t
