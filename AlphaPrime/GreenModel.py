@@ -1317,17 +1317,17 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
 
     actual_metric_locally=compute_Gijbar_from_Hijbar(final_matrix,point_vec_to_complex(special_point),kahler_t=1.0)
     # Pullback the final matrix to the 3x3 matrix
-    pulled_back_final_matrix = tf.einsum('ai,BJ,iJ->aB', special_pullback,tf.math.conj(special_pullback), actual_metric_locally)
+    pulled_back_metric_result = tf.einsum('ai,BJ,iJ->aB', special_pullback,tf.math.conj(special_pullback), actual_metric_locally)
 
     # Convert to numpy, round to 2 decimal places, and print
-    numpy_pulled_back_matrix = pulled_back_final_matrix.numpy()
-    rounded_pulled_back_matrix = np.round(numpy_pulled_back_matrix, decimals=2)
+    numpy_pulled_back_metric_result = pulled_back_metric_result.numpy()
+    rounded_pulled_back_metric_result = np.round(numpy_pulled_back_metric_result, decimals=2)
     print("Rounded pulled-back final matrix to 2 decimal places, compared to actual g_CY:")
-    print(rounded_pulled_back_matrix)
+    print(rounded_pulled_back_metric_result)
     print(np.round(g_CY,decimals=2))
 
     # Compute and print eigenvalues of the pulled-back matrix
-    eigenvalues = tf.linalg.eigvals(pulled_back_final_matrix)
+    eigenvalues = tf.linalg.eigvals(pulled_back_metric_result)
     print("Eigenvalues of the pulled-back matrix:")
     print(eigenvalues)
 

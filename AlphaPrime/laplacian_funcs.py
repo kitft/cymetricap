@@ -49,7 +49,7 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
                     #PULLBACKS SHOULD BE GIVEN WITH THIS? Or decide I want to use none?
     #factor of 2 because the laplacian is 2g^ab da db 2gCY∂a∂ ̄b,. pb_dd_phi_Pbbar is just
     #no, ditch the factor of two!
-    gdd_phi = tf.einsum('xba,xai,xji,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
+    gdd_phi = tf.einsum('xba,xai,xij,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
     return gdd_phi
 
 
