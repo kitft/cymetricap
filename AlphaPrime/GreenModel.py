@@ -574,11 +574,13 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
 
     kahler_t=tf.math.real(BASIS['KMODULI'][0])
     nfold = tf.shape(special_pullback)[0].numpy()
-    volume_for_sources = tf.cast(vol_k_no6 / np.math.factorial(nfold),tf.float32)
-    print('Volume for sources: ', volume_for_sources)
 
     special_point_complex=point_vec_to_complex(special_point)
     special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
+
+    volume_for_sources = tf.cast(vol_k_no6 / np.math.factorial(nfold),tf.float32)
+    print('Volume for sources: ', volume_for_sources)
+
 
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
     radius=0.05
@@ -1063,14 +1065,14 @@ def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, kahler_t=1.0)
     
     return total_loss, loss1, loss_v, loss_eig
 
-def optimize_matrix( point, pullback, g_CY, v_list, weights, learning_rate=0.1, num_epochs=100000, kahler_t=1.0, n_init=50):
+def optimize_matrix(rpoint, pullback, g_CY, v_list, weights, learning_rate=0.1, num_epochs=100000, kahler_t=1.0, n_init=50):
     """
     Optimize to find the matrix satisfying the given conditions, using parallel initializations.
     
     Args:
     n (int): Dimension of the square matrix.
     m (int): Length of the input vector.
-    point (tf.Tensor): Point in the manifold.
+    rpoint (tf.Tensor): Point in the manifold, real
     pullback (tf.Tensor): Pullback tensor.
     g_CY (tf.Tensor): Target metric.
     v_list (list): List of vectors for the orthonormality condition.
@@ -1083,7 +1085,7 @@ def optimize_matrix( point, pullback, g_CY, v_list, weights, learning_rate=0.1, 
     Returns:
     tuple: Optimized vector, final loss, satisfaction measure, and lists of losses.
     """
-    cpoint = point_vec_to_complex(point)
+    cpoint = point_vec_to_complex(rpoint)
     n = tf.shape(pullback)[-1]  # Dimension of the square matrix
     m=n**2
     
