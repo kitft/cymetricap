@@ -521,7 +521,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     inv_mets_special_val=tf.linalg.inv(metricModel(special_points_val))
  
     
-    np.avez_compressed(os.path.join(dirname, 'dataset'),
+    np.savez_compressed(os.path.join(dirname, 'dataset'),
                         X_train=X_train,
                         y_train=y_train,
                         train_pullbacks=train_pullbacks,
