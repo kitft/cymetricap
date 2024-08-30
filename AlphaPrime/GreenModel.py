@@ -128,6 +128,17 @@ class GreenModel(FSModel):
         self.special_metric=self.metricModel(tf.expand_dims(special_point,axis=0))[0]
         self.final_matrix=final_matrix
         # Check if special_metric is the pullback of final_matrix
+
+        self.kahler_t = tf.math.real(self.BASIS['KMODULI'][0])
+        self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
+            point_vec_to_complex(self.special_point),
+            cpoints,
+            kahler_t=self.kahler_t,
+            metricijbar=self.final_matrix
+        )
+        self.test_pulled_back_matrix()
+
+    def test_pulled_back_matrix(self):
         pulled_back_matrix = tf.einsum('ai,BJ,iJ->aB', 
                                        self.special_pullback,tf.math.conj(self.special_pullback), 
                                        self.final_matrix)
@@ -142,15 +153,6 @@ class GreenModel(FSModel):
             tf.print("Warning: special_metric is not the pullback of final_matrix")
             tf.print("Pulled back matrix:", pulled_back_matrix)
             tf.print("Special metric:", self.special_metric)
-
-
-        self.kahler_t = tf.math.real(self.BASIS['KMODULI'][0])
-        self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
-            point_vec_to_complex(self.special_point),
-            cpoints,
-            kahler_t=self.kahler_t,
-            metricijbar=self.final_matrix
-        )
 
 
 
