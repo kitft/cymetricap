@@ -537,7 +537,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
         pbs = point_gen.pullbacks(points)
         fs_ref = point_gen.fubini_study_metrics(points, vol_js=np.ones_like(point_gen.kmoduli))
         fs_ref_pb = tf.einsum('xai,xij,xbj->xab', pbs, fs_ref, np.conj(pbs))
-        aux_weights = omega.flatten() / weights.flatten()
+        aux_weights = omega[:,0] / weights[:,0]
         norm_fac = point_gen.vol_j_norm / np.mean(np.real(np.linalg.det(fs_ref_pb)) / aux_weights)
         #print("point_gen.vol_j_norm")
         #print(point_gen.vol_j_norm)
