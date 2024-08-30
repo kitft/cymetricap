@@ -605,6 +605,10 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
     radius=0.05
     min_radius=0.005
+
+    radius=0.1
+    min_radius=0.01
+
     num_points=len(ys)
 
     points_around_special=get_points_around_special(special_point_complex,radius,num_points,point_gen,uniform_on_radius=True,min_radius=min_radius,final_matrix=final_matrix,kahler_t=kahler_t,max_tolerance_for_gradient_descent=max_tolerance_for_gradient_descent)
