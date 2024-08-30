@@ -573,11 +573,11 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
 
 
     kahler_t=tf.math.real(BASIS['KMODULI'][0])
-    nfold = tf.shape(special_pullback)[0].numpy()
 
     special_point_complex=point_vec_to_complex(special_point)
     special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
 
+    nfold = tf.shape(special_pullback)[0].numpy()
     volume_for_sources = tf.cast(vol_k_no6 / np.math.factorial(nfold),tf.float32)
     print('Volume for sources: ', volume_for_sources)
 
