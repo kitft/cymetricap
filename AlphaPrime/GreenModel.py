@@ -781,7 +781,7 @@ def sigmoid_like_function(x, transition_point=1, steepness=1):
     return 1 - tf.exp(-steepness * quadratic_part)
 
 
-def geodesic_distance_CPn(cpoint1, cpoint2, t, metricijbar=None):
+def geodesic_distance_CPn(cpoint1, cpoint2, kahler_t, metricijbar=None):
     # Calculate geodesic distance between two points in CP^n
     # Check if point1 and point2 are complex-valued
     if not isinstance(cpoint1, tf.Tensor) or not isinstance(cpoint2, tf.Tensor) or cpoint1.dtype not in (tf.complex64, tf.complex128) or cpoint2.dtype not in (tf.complex64, tf.complex128):
@@ -811,15 +811,15 @@ def geodesic_distance_CPn(cpoint1, cpoint2, t, metricijbar=None):
     inner_product = tf.clip_by_value(inner_product, -1.0, 1.0)
     
     # Calculate the geodesic distance
-    distance = t * tf.math.acos(inner_product)
+    distance = kahler_t * tf.math.acos(inner_product)
     
     return distance
 
 @tf.function
-def vectorized_geodesic_distance_CPn(special_point, cpoints, t=1.0, metricijbar=None):
+def vectorized_geodesic_distance_CPn(special_point, cpoints, kahler_t=1.0, metricijbar=None):
     # Vectorized version of geodesic_distance_CPn
     return tf.vectorized_map(
-        lambda p: geodesic_distance_CPn(special_point, p, t, metricijbar=metricijbar),
+        lambda p: geodesic_distance_CPn(special_point, p, kahler_t, metricijbar=metricijbar),
         cpoints
     )
 
@@ -976,7 +976,7 @@ def compute_Gijbar_from_Hijbar(Hijbar,cpoint,t=1.0):
     return tf.cast(t,tf.complex64)*(Hijbar_over_H-HssH_over_H2)
 
 
-def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, t=1.0):
+def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, kahler_t=1.0):
     """
     Compute the loss function.
     
@@ -993,7 +993,7 @@ def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, t=1.0):
     """
     matrix = vector_to_hermitian_matrix(vec, n)
     # Component 1: g(matrix) = k
-    Gijbar = compute_Gijbar_from_Hijbar(matrix, cpoint, t)
+    Gijbar = compute_Gijbar_from_Hijbar(matrix, cpoint, kahler_t)
     pullback_gijbar = tf.einsum('ai,BJ,iJ->aB', pullback, tf.math.conj(pullback), Gijbar)
     loss1 = tf.reduce_sum(tf.abs(pullback_gijbar - g_CY)**2)
     # Components for orthonormality conditions
@@ -1083,7 +1083,7 @@ def optimize_matrix( point, pullback, g_CY, v_list, weights, learning_rate=0.1, 
     best_vec = vecs[best_index]
     best_loss = total_loss_batch[best_index]
 
-    final_total_loss, final_loss1, final_loss_v, final_loss_eig = loss_function(best_vec, n, cpoint, pullback, g_CY, v_list, weights, t)
+    final_total_loss, final_loss1, final_loss_v, final_loss_eig = loss_function(best_vec, n, cpoint, pullback, g_CY, v_list, weights, kahler_t)
     satisfaction_measure = 1 / (1 + final_total_loss)  # Maps [0, inf) to (0, 1]
     
     return best_vec, final_total_loss, satisfaction_measure, np.array(total_losses), np.array(losses1), np.array(losses_v), np.array(losses_eig)
