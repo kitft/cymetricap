@@ -1055,7 +1055,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
 def compute_Gijbar_from_Hijbar(Hijbar,cpoint,kahler_t=1.0):
     H = tf.einsum('iJ,i,J->',Hijbar,cpoint,tf.math.conj(cpoint))
     Hijbar_over_H = Hijbar/H
-    HssH_over_H2 = tf.einsum('kJ,k,M,iM->iJ',Hijbar_over_H,cpoint,tf.math.conj(cpoint),Hijbar_over_H)/H**2
+    HssH_over_H2 = tf.einsum('kJ,k,M,iM->iJ',Hijbar,cpoint,tf.math.conj(cpoint),Hijbar)/H**2
     return tf.cast(kahler_t,tf.complex64)*(Hijbar_over_H-HssH_over_H2)
 
 
