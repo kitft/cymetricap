@@ -183,7 +183,7 @@ class GreenModel(FSModel):
         """
         #cast to real
         #-2*laplacian because this is the actual 'laplace-beltrami operator', not just gabbar del delbar
-        lpl_losses=tf.math.abs(tf.math.real(-2*laplacian(self.model,x,pullbacks,invmetrics)))
+        lpl_losses=tf.math.abs(tf.math.real(-2*laplacian(self,x,pullbacks,invmetrics)))
         all_lpl_loss = lpl_losses**self.n[0]
         return all_lpl_loss
 
