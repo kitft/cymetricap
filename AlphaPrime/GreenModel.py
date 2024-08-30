@@ -127,7 +127,7 @@ class GreenModel(FSModel):
         self.special_point=special_point
         self.special_pullback=tf.cast(self.pullbacks(point_vec_to_complex((tf.expand_dims(special_point,axis=0))))[0],dtype=tf.complex64)
         self.special_metric=self.metricModel(self.special_point)
-        self.kahler_t = float(self.BASIS['KMODULI'])
+        self.kahler_t = tf.math.real(self.BASIS['KMODULI'][0])
         self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
             self.special_point,
             cpoints,
@@ -500,7 +500,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     print(kappaover6) 
 
 
-    kahler_t=BASIS['KMODULI'][0]
+    kahler_t=tf.math.real(BASIS['KMODULI'][0])
 
     special_point_complex=point_vec_to_complex(special_point)
     special_pullback=point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0]
@@ -1006,7 +1006,7 @@ def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, t=1.0):
     
     return total_loss, loss1, loss_v, loss_eig
 
-def optimize_matrix( point, pullback, g_CY, v_list, weights, learning_rate=0.1, num_epochs=100000, t=1.0, n_init=50):
+def optimize_matrix( point, pullback, g_CY, v_list, weights, learning_rate=0.1, num_epochs=100000, kahler_t=1.0, n_init=50):
     """
     Optimize to find the matrix satisfying the given conditions, using parallel initializations.
     
@@ -1044,7 +1044,7 @@ def optimize_matrix( point, pullback, g_CY, v_list, weights, learning_rate=0.1, 
     def train_step_batch(vecs):
         with tf.GradientTape() as tape:
             matrix_batch = tf.map_fn(lambda v: vector_to_hermitian_matrix(v, n), vecs, dtype=tf.complex64)
-            Gijbar_batch = tf.map_fn(lambda matrix: compute_Gijbar_from_Hijbar(matrix, cpoint, t), matrix_batch)
+            Gijbar_batch = tf.map_fn(lambda matrix: compute_Gijbar_from_Hijbar(matrix, cpoint, kahler_t), matrix_batch)
             pullback_gijbar_batch = tf.einsum('ai,BJ,niJ->naB', pullback, tf.math.conj(pullback), Gijbar_batch)
             loss1_batch = tf.reduce_sum(tf.abs(pullback_gijbar_batch - g_CY)**2, axis=[1, 2])
             
@@ -1151,7 +1151,7 @@ def analyze_pullback_kernel(pullback_matrix, point):
 
     return kernel_basis
 
-def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, t=1.0, plot_losses=False, weights={'g': 1.0, 'v': 1.0, 'eig': 0.1}):
+def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=1.0, plot_losses=False, weights={'g': 1.0, 'v': 1.0, 'eig': 0.1}):
     """
     Optimize the matrix to satisfy given conditions and return the final optimized matrix.
 
@@ -1184,7 +1184,7 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
 
     while True:
         try:
-            optimized_vec, final_loss, satisfaction, total_losses, losses1, losses_v, losses_eig = optimize_matrix(special_point, special_pullback, g_CY, v_list, weights, t,n_init=50)
+            optimized_vec, final_loss, satisfaction, total_losses, losses1, losses_v, losses_eig = optimize_matrix(special_point, special_pullback, g_CY, v_list, weights, kahler_t=kahler_t,n_init=50)
             break
         except tf.errors.InvalidArgumentError: #sometimes the optimizer fails, probably due to singular matrices
             print("Optimize matrix failed, trying again")
