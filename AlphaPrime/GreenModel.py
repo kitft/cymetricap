@@ -233,10 +233,11 @@ class GreenModel(FSModel):
 
     def local_model_of_greens_function(self,geodesic_distance):
         area_of_unit_sphere_in_2ndim=2*np.pi**(float(self.nfold))/tf.math.exp(tf.math.lgamma(float(self.nfold)))
-        c_n = -1/((2*self.nfold-2)*area_of_unit_sphere_in_2ndim)
-        if int(self.nfold)!=2:
+        if int(2*self.nfold)!=2:
+            c_n = 1/((2*self.nfold-2)*area_of_unit_sphere_in_2ndim)# positive sign for 2n>2
             return c_n*geodesic_distance**(-(self.nfold-2))
-        elif int(self.nfold)==2:
+        elif int(2*self.nfold)==2:
+            c_n = -1/(2*np.pi)# negative sign for 2n==2
             return c_n*np.log(geodesic_distance)
 
 
@@ -942,7 +943,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
         for i in range(1, max_iterations + 1):
             losses = optimize_step()
 
-            if i % 1000 == 0:
+            if i % 100== 0:
                 print(f"Iteration {i}: mean loss = {tf.reduce_mean(losses):.6e}, max loss = {tf.reduce_max(losses):.6e}")
             # Check if max_loss is below certain thresholds and decrease learning rate accordingly
             max_loss = tf.reduce_max(losses)
