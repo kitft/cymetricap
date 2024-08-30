@@ -1017,7 +1017,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
     optimized_distances_CPn = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t)
     optimized_distances_matrix = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t, metricijbar=final_matrix)
 
-
+    print('masking points with a radius greater than '+str(min_radius) +  ' times kahler param, with the Hijbar metric')
     mask = optimized_distances_matrix.numpy() > min_radius*kahler_t
     initial_points = tf.boolean_mask(initial_points, mask)
     optimized_points = tf.boolean_mask(optimized_points, mask)
