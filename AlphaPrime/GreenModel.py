@@ -455,7 +455,7 @@ class GreenModel(FSModel):
         self.model.save(filepath=filepath, **kwargs)
 
 
-def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BASIS,val_split=0.1, ltails=0, rtails=0, normalize_to_vol_j=True,batch_size=100,max_tolerance_for_gradient_descent=1e-7):
+def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BASIS,val_split=0.1, ltails=0, rtails=0, normalize_to_vol_j=True,batch_size=100,max_tolerance_for_gradient_descent=1e-7,radius=0.1,min_radius=0.01):
     r"""Prepares training and validation data from point_gen.
 
     Note:
@@ -603,11 +603,11 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
 
 
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
-    radius=0.05
-    min_radius=0.005
+    # radius=0.05
+    # min_radius=0.005
 
-    radius=0.1
-    min_radius=0.01
+    # radius=0.1
+    # min_radius=0.01
 
     num_points=len(ys)
 
