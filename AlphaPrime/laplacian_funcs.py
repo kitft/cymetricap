@@ -51,7 +51,7 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
                     #PULLBACKS SHOULD BE GIVEN WITH THIS? Or decide I want to use none?
     #note - this is the laplacian without a minus sign, and without the factor of 2 (i.e. it's a 'complex laplacian')
     print("hi - fixed")
-    gdd_phi = tf.einsum('xba,xai,xji,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
+    gdd_phi = tf.einsum('xba,xai,xij,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
     return gdd_phi
 
 
