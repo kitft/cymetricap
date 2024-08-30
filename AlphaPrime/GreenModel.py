@@ -55,7 +55,7 @@ class GreenModel(FSModel):
         :py:mod:`cymetric.models.metrics` and
         :py:mod:`cymetric.models.callbacks`.
     """
-    def __init__(self, tfmodel, BASIS,phimodel, special_point,euler_char,alpha=None, **kwargs):
+    def __init__(self, tfmodel, BASIS, metricModel, special_point,alpha=None, **kwargs):
         r"""FreeModel is a tensorflow model predicting CY metrics. 
         
         The output is
@@ -120,7 +120,7 @@ class GreenModel(FSModel):
         self.gclipping = float(5.0)
         # add to compile?
         #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float32))
-        self.phimodel =phimodel
+        self.metricModel =metricModel
         self.euler_char=euler_char    
         self.sigmoid_for_nn = lambda x: sigmoid_like_function(x, transition_point=0.1, steepness=2)
 
@@ -1151,7 +1151,7 @@ def analyze_pullback_kernel(pullback_matrix, point):
 
     return kernel_basis
 
-def optimize_and_get_final_matrix(special_pullback, special_point, phimodel1, t=1.0, plot_losses=False, weights={'g': 1.0, 'v': 1.0, 'eig': 0.1}):
+def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, t=1.0, plot_losses=False, weights={'g': 1.0, 'v': 1.0, 'eig': 0.1}):
     """
     Optimize the matrix to satisfy given conditions and return the final optimized matrix.
 
@@ -1180,7 +1180,7 @@ def optimize_and_get_final_matrix(special_pullback, special_point, phimodel1, t=
     n=tf.shape(special_pullback)[-1]
     kernel_basis = analyze_pullback_kernel(special_pullback, special_point)
     v_list = tf.transpose(kernel_basis)
-    g_CY = phimodel1(tf.expand_dims(special_point,axis=0))
+    g_CY = metricModel(tf.expand_dims(special_point,axis=0))
 
     while True:
         try:
