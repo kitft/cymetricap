@@ -59,7 +59,51 @@ def laplacian_measure_loss(model, validation_data):
     return tf.math.reduce_mean(
         model.compute_laplacian_loss(X_val,pullbacks,invmetrics,sources))
 
+def laplacian_measure_loss_no_source(model, validation_data):
+    r"""Computes the Transition loss measure.
+
+    Args:
+        model (tfk.model): Any (sub-)class of FSModel.
+        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
+
+    Returns:
+        tf.float32: Transition loss measure
+    """
+    #X_val, aux = validation_data
+    X_val = validation_data["X_val"]
+    pullbacks = validation_data["val_pullbacks"]
+    invmetrics = validation_data["inv_mets_val"]
+
+ 
+    #sort out this float32 problem!
+    return tf.math.reduce_mean(
+        model.compute_laplacian_loss(X_val,pullbacks,invmetrics))
+
+
+def laplacian_special_measure_loss_no_source(model, validation_data):
+    r"""Computes the Transition loss measure.
+
+    Args:
+        model (tfk.model): Any (sub-)class of FSModel.
+        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
+
+    Returns:
+        tf.float32: Transition loss measure
+    """
+    #X_val, aux = validation_data
+    X_val = validation_data["special_points_val"]
+    pullbacks = validation_data["special_pullback_val"]
+    invmetrics = validation_data["inv_mets_special_val"]
+
+ 
+    #sort out this float32 problem!
+    return tf.math.reduce_mean(
+        model.compute_laplacian_loss(X_val,pullbacks,invmetrics))
+
 laplacian_measure_tf = tf.function(func=laplacian_measure_loss)
+laplacian_measure_tf_no_source = tf.function(func=laplacian_measure_loss_no_source)
+laplacian_special_measure_tf_no_source = tf.function(func=laplacian_special_measure_loss_no_source)
+
 class LaplacianCallback(tfk.callbacks.Callback):
     """Callback that tracks the transition loss weighted over the CY."""
     def __init__(self, validation_data, initial=False):
@@ -93,6 +137,87 @@ class LaplacianCallback(tfk.callbacks.Callback):
     
     def on_train_begin(self, logs=None):
         r"""Compute transition measure before training as baseline.
+
+        Args:
+            logs (dict, optional): History. Defaults to None.
+        """
+        if self.initial:
+            self.on_epoch_end(-1, logs=logs)
+
+
+class LaplacianNoSourceCallback(tfk.callbacks.Callback):
+    """Callback that tracks the transition loss weighted over the CY."""
+    def __init__(self, validation_data, initial=False):
+        r"""A callback which computes the transition measure for
+        the validation data after every epoch end.
+
+        Args:
+            validation_data (tuple(X_val, y_val)): validation data
+            initial (bool, optional): If True does one iteration before training.
+                Defaults to False.
+        """
+        super(LaplacianCallback, self).__init__()
+        self.data=validation_data
+        self.initial=initial
+        
+    def on_epoch_end(self, epoch, logs=None):
+        r"""Computes transition measure.
+
+        Args:
+            epoch (int): epoch
+            logs (dict, optional): history.history. Defaults to None.
+        """
+        laplacian = laplacian_measure_tf(self.model, self.data)
+
+        cb_res = laplacian.numpy().tolist()
+        logs['laplacian_val'] = cb_res
+        if cb_res <= 1e-3:
+            print(' - Laplacian measure val: {:.4e}'.format(cb_res))
+        else:
+            print(' - Laplacian measure val: {:.4f}'.format(cb_res))
+    
+    def on_train_begin(self, logs=None):
+        r"""Compute transition measure before training as baseline.
+
+        Args:
+            logs (dict, optional): History. Defaults to None.
+        """
+        if self.initial:
+            self.on_epoch_end(-1, logs=logs)
+
+class LaplacianSpecialNoSourceCallback(tfk.callbacks.Callback):
+    """Callback that tracks the special laplacian loss at a specific point."""
+    def __init__(self, validation_data, initial=False):
+        r"""A callback which computes the special laplacian measure for
+        the validation data after every epoch end.
+
+        Args:
+            validation_data (tuple(X_val, y_val)): validation data
+            initial (bool, optional): If True does one iteration before training.
+                Defaults to False.
+        """
+        super(LaplacianSpecialNoSourceCallback, self).__init__()
+        self.data = validation_data
+        self.initial = initial
+        
+    def on_epoch_end(self, epoch, logs=None):
+        r"""Computes special laplacian measure.
+
+        Args:
+            epoch (int): epoch
+            logs (dict, optional): history.history. Defaults to None.
+        """
+        special_laplacian = laplacian_special_measure_tf_no_source(self.model, self.data)
+
+        cb_res = special_laplacian.numpy().tolist()
+        logs['special_laplacian_val'] = cb_res
+        if cb_res <= 1e-3:
+            print(' - Special Laplacian measure val: {:.4e}'.format(cb_res))
+        else:
+            print(' - Special Laplacian measure val: {:.4f}'.format(cb_res))
+    
+    def on_train_begin(self, logs=None):
+        r"""Compute special laplacian measure before training as baseline.
 
         Args:
             logs (dict, optional): History. Defaults to None.
