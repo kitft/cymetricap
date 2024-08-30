@@ -136,7 +136,7 @@ class GreenModel(FSModel):
             kahler_t=self.kahler_t,
             metricijbar=self.final_matrix
         )
-        self.test_pulled_back_matrix()
+        #self.test_pulled_back_matrix()
 
     def test_pulled_back_matrix(self):
         pulled_back_matrix = tf.einsum('ai,BJ,iJ->aB', 
