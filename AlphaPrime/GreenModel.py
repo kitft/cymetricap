@@ -228,7 +228,7 @@ class GreenModel(FSModel):
         geodesic_distance= self.geodesic_distance_vec_function(cpoints)
         local_model=self.local_model_of_greens_function(geodesic_distance)
         to_multiply_nn=self.sigmoid_for_nn(geodesic_distance)
-        nn_prediction=self.model(input_tensor,training=False).flatten()
+        nn_prediction=self.model(input_tensor)[:,0]
 
         return local_model+nn_prediction*to_multiply_nn
         
