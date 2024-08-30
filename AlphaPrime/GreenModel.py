@@ -924,6 +924,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
     
 
     def gradient_descent_vectorized(cpoints, poly_func, pg, learning_rate=0.0001, max_iterations=10000000, max_tolerance=1e-7,kahler_t=1.0):
+        print("max_tolerance for gradient descent is "+str(max_tolerance))
         """Perform gradient descent to minimize function poly_func for multiple points using vectorized ADAM optimization."""
         realpoints=point_vec_to_real(cpoints)
         # Initialize the ADAM optimizer
