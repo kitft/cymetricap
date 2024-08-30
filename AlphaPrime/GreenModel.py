@@ -125,7 +125,8 @@ class GreenModel(FSModel):
 
         self.special_point=special_point
         self.special_pullback=tf.cast(self.pullbacks((tf.expand_dims(special_point,axis=0)))[0],dtype=tf.complex64)
-        self.special_metric=self.metricModel(self.special_point)
+        self.special_metric=self.metricModel(tf.expand_dims(special_point,axis=0))[0]
+
         self.kahler_t = tf.math.real(self.BASIS['KMODULI'][0])
         self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
             self.special_point,
@@ -1180,7 +1181,7 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
     n=tf.shape(special_pullback)[-1]
     kernel_basis = analyze_pullback_kernel(special_pullback, special_point)
     v_list = tf.transpose(kernel_basis)
-    g_CY = metricModel(tf.expand_dims(special_point,axis=0))
+    g_CY = metricModel(tf.expand_dims(special_point,axis=0))[0]
 
     while True:
         try:
