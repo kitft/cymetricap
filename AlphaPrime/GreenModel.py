@@ -121,7 +121,6 @@ class GreenModel(FSModel):
         # add to compile?
         #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float32))
         self.metricModel =metricModel
-        self.euler_char=euler_char    
         self.sigmoid_for_nn = lambda x: sigmoid_like_function(x, transition_point=0.1, steepness=2)
 
         self.special_point=special_point
