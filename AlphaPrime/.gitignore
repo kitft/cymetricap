@@ -5,4 +5,4 @@ dataAlphaP/
 */*.npz
 basedata13/
 __pycache__/
-
+*.ipynb

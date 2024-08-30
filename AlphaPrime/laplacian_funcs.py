@@ -11,8 +11,8 @@ def point_vec_to_real(complexvec):
 def point_vec_to_complex(p):
     #if len(p) == 0: 
     #    return tf.constant([[]])
-    plen = len(p[0])//2
-    return tf.complex(p[:, :plen],p[:, plen:])
+    plen = (p.shape[-1])//2
+    return tf.complex(p[..., :plen],p[..., plen:])
 
 @tf.function
 def laplacian(betamodel,points,pullbacks,invmetrics):
@@ -42,8 +42,6 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
     #check |z|^2 = (x+iy)(x-iy) = x^2 +y^2, d/dz dzbar is 1? Or 1/4(2+2)+i*0 = 1. So this works. First index is d/dz, second is d/dy
     #try z^2, ddbar_ (x^2+2ixy -y^2), dz dzbar = 0, 1/4(2-2)+i1/4(2-2 = 0)
     #factor of 2 as the laplacian CY =  2g_CY^abbar ∂_a∂_(b),
-
-    #no factor of 2!!!!
     # note that invmetric looks like g^(b)a not g^(a)b. Actually needs a transpose. ddbar_phi has indices
     #j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                     #Coordinates(s) to be eliminated in the pullbacks.
@@ -51,7 +49,7 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
                     #PULLBACKS SHOULD BE GIVEN WITH THIS? Or decide I want to use none?
     #factor of 2 because the laplacian is 2g^ab da db 2gCY∂a∂ ̄b,. pb_dd_phi_Pbbar is just
     #no, ditch the factor of two!
-    gdd_phi = tf.einsum('xba,xai,xij,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
+    gdd_phi = tf.einsum('xba,xai,xji,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
     return gdd_phi
 
 
@@ -185,7 +183,6 @@ def laplacianWithH(sigmamodel,points,pullbacks,invmetrics,Hfunc):
     i_dy_Hdx_phi = dy_Hdx_phi[:,1]
     i_dy_Hdy_phi = dy_Hdy_phi[:,1]
     dd_phi = tf.complex(r_dx_Hdx_phi + r_dy_Hdy_phi, r_dx_Hdy_phi - r_dy_Hdx_phi)+ 1j*tf.complex(i_dx_Hdx_phi + i_dy_Hdy_phi, i_dx_Hdy_phi - i_dy_Hdx_phi)
-    # this means
     #dd_phi = tf.complex(r_dx_Hdx_phi + r_dy_Hdy_phi,0.)# r_dx_Hdy_phi - r_dy_Hdx_phi)+ 1j*tf.complex(i_dx_Hdx_phi + i_dy_Hdy_phi, i_dx_Hdy_phi - i_dy_Hdx_phi)
     #dd_phi = tf.complex(r_dy_Hdy_phi,0.)# r_dx_Hdy_phi - r_dy_Hdx_phi)+ 1j*tf.complex(i_dx_Hdx_phi + i_dy_Hdy_phi, i_dx_Hdy_phi - i_dy_Hdx_phi)
     # this second imaginary part is a vector equation, so whilst the result is hermitian it is not necessarily real?
@@ -204,7 +201,7 @@ def laplacianWithH(sigmamodel,points,pullbacks,invmetrics,Hfunc):
                     #If None will take max(dQ/dz). Defaults to None.
                     #PULLBACKS SHOULD BE GIVEN WITH THIS? Or decide I want to use none?
     #factor of 2 because the laplacian is 2g^ab da db 2gCY∂a∂ ̄b,. pb_dd_phi_Pbbar is just
-    gdd_phi = tf.einsum('xba,xai,xij,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
+    gdd_phi = tf.einsum('xba,xai,xji,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
     #gdd_phi = tf.einsum('xai,xji,xbj->xab', pullbacks, dd_phi, tf.math.conj(pullbacks))
     return gdd_phi
 
@@ -225,10 +222,9 @@ def coclosure_check(points,HYMmetric,harmonicform_jbar,sigma,invmetric,pullbacks
     dx_Hnu, dy_Hnu = \
         0.5*dHnu[:,:,:, :ncoords], \
         0.5*dHnu[:,:,:, ncoords:]
-        # this should be holo derivative on the second index (i.e. last)
+        # this should be holo derivative on the second index
     #dz_Hnu = tf.complex(tf.math.real(dx_Hnu)+tf.math.imag(dy_Hnu),tf.math.imag(dx_Hnu)-tf.math.real(dy_Hnu)) #note that the (holo) derivative index is the second index (the last index, as seen from above)
     dz_Hnu = tf.complex(dx_Hnu[:,0]+dy_Hnu[:,1],dx_Hnu[:,1]-dy_Hnu[:,0]) #note that the (holo) derivative index is the second index (the last index, as seen from above)
-    #factor of 0.5 is included
     #dz_Hnu = tf.complex(tf.math.real(dx_Hnu)+tf.math.imag(dy_Hnu),0.)#tf.math.imag(dx_Hnu)-tf.math.real(dy_Hnu)) #note that the (holo) derivative index is the second index (the last index, as seen from above)
     #print("dHnu")
     #print(dHnu)
