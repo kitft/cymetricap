@@ -252,7 +252,7 @@ class GreenModel(FSModel):
         return local_model+nn_prediction_out
 
     @tf.function
-    def local_model_of_greens_function(self,cpoints):
+    def local_model_of_greens_function_cpoints(self,cpoints):
         # Check if cpoints is complex
         if not tf.dtypes.as_dtype(cpoints.dtype).is_complex:
             raise TypeError(f"Expected cpoints to be a complex tensor, but got {cpoints.dtype}")
