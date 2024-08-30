@@ -139,9 +139,10 @@ class GreenModel(FSModel):
         #self.test_pulled_back_matrix()
 
     def test_pulled_back_matrix(self):
+        actual_metric_from_matrix=compute_Gijbar_from_Hijbar(self.final_matrix,self.special_point,self.kahler_t)
         pulled_back_matrix = tf.einsum('ai,BJ,iJ->aB', 
                                        self.special_pullback,tf.math.conj(self.special_pullback), 
-                                       self.final_matrix)
+                                       actual_metric_from_matrix)
         
         # Compare the pulled back matrix with special_metric
         is_equal = tf.reduce_all(tf.math.abs(pulled_back_matrix - self.special_metric) < 1e-6)
