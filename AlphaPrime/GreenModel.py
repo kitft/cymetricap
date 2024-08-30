@@ -228,7 +228,7 @@ class GreenModel(FSModel):
         geodesic_distance= self.geodesic_distance_vec_function(cpoints)
         local_model=self.local_model_of_greens_function(geodesic_distance)
         to_multiply_nn=self.sigmoid_for_nn(geodesic_distance)
-        nn_prediction=self.model(input_tensor)[:,0]
+        nn_prediction=self.model(input_tensor)[:,0]#take 0th so its shape is a pure vector.
 
         return local_model+nn_prediction*to_multiply_nn
         
@@ -307,7 +307,7 @@ class GreenModel(FSModel):
         invmets = data["inv_mets_train"]
         sources = data["sources_train"]
         x_special = data["special_points_train"]
-        pbs_special = data["special_pullback_train"]
+        pbs_special = data["special_pullbacks_train"]
         invmets_special = data["inv_mets_special_train"]
         sources_special = data["sources_special_train"]
         with tf.GradientTape(persistent=False) as tape:
