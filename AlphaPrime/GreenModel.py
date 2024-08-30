@@ -259,7 +259,7 @@ class GreenModel(FSModel):
             return c_n*geodesic_distance**(-(2*self.nfold-2))
         elif int(2*self.nfold)==2:
             c_n = -1/(2*np.pi)# negative sign for 2n==2
-            return c_n*np.log(geodesic_distance)
+            return c_n*tf.math.log(geodesic_distance)
 
 
     def compile(self, custom_metrics=None, **kwargs):
