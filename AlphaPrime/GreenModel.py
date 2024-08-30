@@ -189,7 +189,7 @@ class GreenModel(FSModel):
         return all_t_loss/(self.nTransitions)
 
 
-    def compute_laplacian_loss(self,x,pullbacks,invmetrics):
+    def compute_laplacian_loss(self,x,pullbacks,invmetrics,sources):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
@@ -200,7 +200,7 @@ class GreenModel(FSModel):
         """
         #cast to real
         #-2*laplacian because this is the actual 'laplace-beltrami operator', not just gabbar del delbar
-        lpl_losses=tf.math.abs(tf.math.real(-2*laplacian(self,x,pullbacks,invmetrics)))
+        lpl_losses=tf.math.abs(tf.math.real(-2*laplacian(self,x,pullbacks,invmetrics)-sources))
         all_lpl_loss = lpl_losses**self.n[0]
         return all_lpl_loss
 
@@ -302,10 +302,11 @@ class GreenModel(FSModel):
         x = data["X_train"]
         pbs = data["train_pullbacks"]
         invmets = data["inv_mets_train"]
+        sources = data["sources_train"]
         x_special = data["special_points_train"]
         pbs_special = data["special_pullback_train"]
         invmets_special = data["inv_mets_special_train"]
-
+        sources_special = data["sources_special_train"]
         with tf.GradientTape(persistent=False) as tape:
             trainable_vars = self.model.trainable_variables
             #tape.watch(trainable_vars)
@@ -316,12 +317,12 @@ class GreenModel(FSModel):
             else:
                 t_loss = tf.zeros_like(x[:, 0])
             if self.learn_laplacian:
-                lpl_loss = self.compute_laplacian_loss(x,pbs,invmets)
+                lpl_loss = self.compute_laplacian_loss(x,pbs,invmets,sources)
                 #print("lpl beta")
             else:
                 lpl_loss = tf.zeros_like(x[:, 0])
             if self.learn_special_laplacian:
-                lpl_special_loss = self.compute_laplacian_loss(x_special,pbs_special,invmets_special)
+                lpl_special_loss = self.compute_laplacian_loss(x_special,pbs_special,invmets_special,sources_special)
                 #print("lpl beta")
             else:
                 lpl_special_loss = tf.zeros_like(x_special[:, 0])
@@ -383,22 +384,22 @@ class GreenModel(FSModel):
         sample_weight = None
         pbs = data["val_pullbacks"]
         invmets = data["inv_mets_val"]
+        sources = data["sources_val"]
         x_special = data["special_points_val"]
         pbs_special = data["special_pullback_val"]
         invmets_special = data["inv_mets_special_val"]
-        #print("validation happening")
-        #y_pred = self(x)
-        # add loss contributions
+        sources_special = data["sources_special_val"]
+
         if self.learn_transition:
             t_loss = self.compute_transition_loss(x)
         else:
             t_loss = tf.zeros_like(x[:, 0])
         if self.learn_laplacian:
-            lpl_loss = self.compute_laplacian_loss(x,pbs,invmets)
+            lpl_loss = self.compute_laplacian_loss(x,pbs,invmets,sources)
         else:
             lpl_loss = tf.zeros_like(x[:, 0])
         if self.learn_special_laplacian:
-            lpl_special_loss = self.compute_laplacian_loss(x_special,pbs_special,invmets_special)
+            lpl_special_loss = self.compute_laplacian_loss(x_special,pbs_special,invmets_special,sources_special)
         else:
             lpl_special_loss = tf.zeros_like(x_special[:, 0])
 
@@ -535,8 +536,8 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     inv_mets_train=inv_mets[:t_i]
     inv_mets_val=inv_mets[t_i:]
 
-    flat_weights=weights[:,0]*omega[:,0]**(-1)*1/6
-    cy_weights=flat_weights*absdets
+    #flat_weights=weights[:,0]*omega[:,0]**(-1)*1/6
+    #cy_weights=flat_weights*absdets
     #print(tf.shape(weights))
     #print(tf.shape(flat_weights))
     ##print(tf.shape(absdets))
@@ -561,11 +562,11 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     kappaover6 = tf.cast(vol_k_no6,tf.float32) / tf.cast(volume_cy,tf.float32)
     #rint(ratio)
     #print("hi")
-    tf.cast(kappaover6,tf.float32)
+    #tf.cast(kappaover6,tf.float32)
     #print("hi")
     det = tf.cast(det,tf.float32)
-    print('kappa over 6 ')
-    print(kappaover6) 
+    # print('kappa over nfold factorial! ')
+    # print(kappaover6) 
 
 
     kahler_t=tf.math.real(BASIS['KMODULI'][0])
@@ -582,28 +583,41 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     points_around_special=point_vec_to_real(points_around_special)
     special_points_train=points_around_special[0:t_i]
     special_points_val=points_around_special[t_i:]
-    special_pullback_train=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_train)),tf.complex64)
-    special_pullback_val=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_val)),tf.complex64)
+    special_pullbacks_train=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_train)),tf.complex64)
+    special_pullbacks_val=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_val)),tf.complex64)
     inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),tf.complex64)# this cast is extraneous
     inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),tf.complex64)# this cast is extraneous
- 
+
+    nfold = tf.shape(special_pullback)[0]
+    volume_for_sources = vol_k_no6 / np.math.factorial(tf.cast(nfold, tf.float32))
+    print('Volume for sources: ', volume_for_sources)
     
+    sources_train = -1 * (1/volume_for_sources) * tf.ones_like(y_train[:, 0])
+    sources_val = -1 * (1/volume_for_sources) * tf.ones_like(y_val[:, 0])
+    sources_special_train = -1 * (1/volume_for_sources) * tf.ones_like(special_points_train[:, 0])
+    sources_special_val = -1 * (1/volume_for_sources) * tf.ones_like(special_points_val[:, 0])
+
+ 
     np.savez_compressed(os.path.join(dirname, 'dataset'),
                         X_train=X_train,
                         y_train=y_train,
                         train_pullbacks=train_pullbacks,
                         inv_mets_train=inv_mets_train,
+                        sources_train=sources_train,
                         special_points_train=special_points_train,
-                        special_pullback_train=special_pullback_train,
+                        special_pullbacks_train=special_pullbacks_train,
                         inv_mets_special_train=inv_mets_special_train,
+                        sources_special_train=sources_special_train,
                         final_matrix=final_matrix,
                         X_val=X_val,
                         y_val=y_val,
                         val_pullbacks=val_pullbacks,
                         inv_mets_val=inv_mets_val,
+                        sources_val=sources_val,
                         special_points_val=special_points_val,
-                        special_pullback_val=special_pullback_val,
+                        special_pullbacks_val=special_pullbacks_val,
                         inv_mets_special_val=inv_mets_special_val,
+                        sources_special_val=sources_special_val,
                         final_matrix_copy=final_matrix,
                         )
     print("print 'kappa/6'")
@@ -637,11 +651,7 @@ def train_modelgreen(greenmodel, data_train, optimizer=None, epochs=50, batch_si
     """
     training_history = {}
     hist1 = {}
-    # hist1['opt'] = ['opt1' for _ in range(epochs)]
     hist2 = {}
-    # hist2['opt'] = ['opt2' for _ in range(epochs)]
-    learn_laplacian = greenmodel.learn_laplacian
-    learn_transition = greenmodel.learn_transition
     if sw:
         sample_weights = data_train['y_train'][:, -2]
     else:
@@ -653,8 +663,6 @@ def train_modelgreen(greenmodel, data_train, optimizer=None, epochs=50, batch_si
         #print("internal")
         #print(permint.print_diff())
         batch_size = batch_sizes[0]
-        greenmodel.learn_transition = learn_transition
-        greenmodel.learn_laplacian = learn_laplacian
         greenmodel.compile(custom_metrics=custom_metrics, optimizer=optimizer)
         if verbose > 0:
             print("\nEpoch {:2d}/{:d}".format(epoch + 1, epochs))
@@ -695,32 +703,6 @@ def train_modelgreen(greenmodel, data_train, optimizer=None, epochs=50, batch_si
         if tf.math.is_nan(hist1['loss'][-1]):
             break
 
-        #print("internal2")
-        #print(permint.print_diff())
-        # if history.history['transition_loss'][-1]<10**(-8):
-        #     print("t_loss too low")
-        #     break
-        # batch_size = min(batch_sizes[1], len(data['X_train']))
-        # greenmodel.learn_kaehler = tf.cast(False, dtype=tf.bool)
-        # greenmodel.learn_transition = tf.cast(False, dtype=tf.bool)
-        # greenmodel.learn_ricci = tf.cast(False, dtype=tf.bool)
-        # greenmodel.learn_ricci_val = tf.cast(False, dtype=tf.bool)
-        # greenmodel.learn_volk = tf.cast(True, dtype=tf.bool)
-        # greenmodel.compile(custom_metrics=custom_metrics, optimizer=optimizer)
-        # history = greenmodel.fit(
-        #     data['X_train'], data['y_train'],
-        #     epochs=1, batch_size=batch_size, verbose=verbose,
-        #     callbacks=callbacks, sample_weight=sample_weights
-        # )
-        # for k in history.history.keys():
-        #     if k not in hist2.keys():
-        #         hist2[k] = history.history[k]
-        #     else:
-        #         hist2[k] += history.history[k]
-    # training_history['epochs'] = list(range(epochs)) + list(range(epochs))
-    # for k in hist1.keys():
-    #     training_history[k] = hist1[k] + hist2[k]
-    #for k in set(list(hist1.keys()) + list(hist2.keys())):
     for k in set(list(hist1.keys())):
         #training_history[k] = hist2[k] if k in hist2 and max(hist2[k]) != 0 else hist1[k]
         training_history[k] = hist1[k]
@@ -1303,7 +1285,7 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
     print("eigvals: ",np.round(tf.linalg.eigvals(final_matrix),4))
 
     actual_metric_locally=compute_Gijbar_from_Hijbar(final_matrix,point_vec_to_complex(special_point),kahler_t=1.0)
-    # Pullback the final matrix to the 3x3 matrix using einsum in a one-liner
+    # Pullback the final matrix to the 3x3 matrix
     pulled_back_final_matrix = tf.einsum('ai,BJ,iJ->aB', special_pullback,tf.math.conj(special_pullback), actual_metric_locally)
 
     # Convert to numpy, round to 2 decimal places, and print
