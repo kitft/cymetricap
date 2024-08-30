@@ -508,10 +508,11 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
 
     radius=0.05
-    min_radius=0.01
+    min_radius=0.005
     num_points=len(ys)
 
     points_around_special=get_points_around_special(special_point_complex,radius,num_points,point_gen,uniform_on_radius=True,min_radius=min_radius,final_matrix=final_matrix,kahler_t=kahler_t)
+    points_around_special=point_vec_to_complex(points_around_special)
     special_points_train=points_around_special[0:t_i]
     special_points_val=points_around_special[t_i:]
     special_pullback_train=point_gen.pullbacks(point_vec_to_complex(special_points_train))
