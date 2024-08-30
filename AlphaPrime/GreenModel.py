@@ -494,9 +494,9 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
         weights = norm_fac * weights # I.E. this is vol_j_norm/ integral of g_FS. That is, we normalise our volume to d_rst 1 1 1, when it is calculated with integral of omega wedge omegabar, i.e. just the weights. I.e. sum over just weights is that.
         # not sure if the above explanation is correct
 
-    X_train = np.concatenate((points[:t_i].real, points[:t_i].imag), axis=-1)
+    X_train=point_vec_to_real(points[:t_i])
     y_train = np.concatenate((weights[:t_i], omega[:t_i]), axis=1)
-    X_val = np.concatenate((points[t_i:].real, points[t_i:].imag), axis=-1)
+    X_val=point_vec_to_real(points[t_i:])
     y_val = np.concatenate((weights[t_i:], omega[t_i:]), axis=1)
 
     
