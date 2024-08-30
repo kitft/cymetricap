@@ -389,7 +389,7 @@ class GreenModel(FSModel):
         invmets = data["inv_mets_val"]
         sources = data["sources_val"]
         x_special = data["special_points_val"]
-        pbs_special = data["special_pullback_val"]
+        pbs_special = data["special_pullbacks_val"]
         invmets_special = data["inv_mets_special_val"]
         sources_special = data["sources_special_val"]
 
