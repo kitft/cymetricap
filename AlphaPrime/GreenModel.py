@@ -187,7 +187,8 @@ class GreenModel(FSModel):
         gi = tf.repeat(self.model(points), self.nTransitions, axis=0)
         all_t_loss = tf.math.abs(gi-gj)
         all_t_loss = tf.reshape(all_t_loss, (-1, self.nTransitions,self.dim_output))
-        all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[1], axis=-2)
+        all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[1], axis=(-2,-1))
+        
         return all_t_loss/(self.nTransitions)
 
 
@@ -320,7 +321,7 @@ class GreenModel(FSModel):
             #automatically watch trainable vars
             # add other loss contributions.
             if self.learn_transition:
-                t_loss = tf.reduce_sum(self.compute_transition_loss(x),axis=-1)
+                t_loss =self.compute_transition_loss(x)
             else:
                 t_loss = tf.zeros_like(x[:, 0])
             if self.learn_laplacian:
