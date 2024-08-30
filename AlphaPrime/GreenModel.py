@@ -522,6 +522,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     weights = tf.boolean_mask(weights, mask)
     omega = tf.boolean_mask(omega, mask)
     
+    
     # Restrict to new_np_old number of points
     points = points[:new_np_old]
     weights = weights[:new_np_old]
@@ -928,7 +929,11 @@ def vectorized_geodesic_distance_CPn(special_point, cpoints, kahler_t=1.0, metri
     )
 
 def get_points_around_special(special_point_complex,radius,num_points,pg,uniform_on_radius=False,min_radius=0.01,final_matrix=None,kahler_t=1.0,max_tolerance_for_gradient_descent=1e-7):
-    num_points_to_generate=num_points*2
+    nfold=tf.shape(special_point_complex)[-1]-2
+    if nfold==1:
+        num_points_to_generate=num_points*5
+    else:
+        num_points_to_generate=num_points*2
 
     def poly(cpoints,pg):
         p_exp = tf.expand_dims(cpoints, 1)
@@ -1031,7 +1036,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
         return point_vec_to_complex(realpoints.numpy()), losses.numpy()
 
 
-
+    print("generating points with radius "+str(radius) + " and min radius "+str(min_radius) + " and uniform on radius: "+str(uniform_on_radius))
     initial_points = generate_uniform_ball_c(special_point_complex, radius, num_points_to_generate, uniform_on_radius=uniform_on_radius)
     initial_points= pg._rescale_points(np.array(initial_points))
     # Calculate distances using vectorized geodesic distance for CPn and then the same with final_matrix
@@ -1047,7 +1052,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
     optimized_distances_CPn = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t)
     optimized_distances_matrix = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t, metricijbar=final_matrix)
 
-    print('masking points with a radius greater than '+str(min_radius) +  ' times kahler param, with the Hijbar metric')
+    print('keeping only the newly generated points with a radius greater than '+str(min_radius) +  ' times kahler param, with the Hijbar metric')
     mask = optimized_distances_matrix.numpy() > min_radius*kahler_t
     initial_points = tf.boolean_mask(initial_points, mask)
     optimized_points = tf.boolean_mask(optimized_points, mask)
