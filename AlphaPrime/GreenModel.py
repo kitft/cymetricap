@@ -237,7 +237,7 @@ class GreenModel(FSModel):
         area_of_unit_sphere_in_2ndim=2*np.pi**(float(self.nfold))/tf.math.exp(tf.math.lgamma(float(self.nfold)))
         if int(2*self.nfold)!=2:
             c_n = 1/((2*self.nfold-2)*area_of_unit_sphere_in_2ndim)# positive sign for 2n>2
-            return c_n*geodesic_distance**(-(self.nfold-2))
+            return c_n*geodesic_distance**(-(2*self.nfold-2))
         elif int(2*self.nfold)==2:
             c_n = -1/(2*np.pi)# negative sign for 2n==2
             return c_n*np.log(geodesic_distance)
