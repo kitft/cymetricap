@@ -862,7 +862,7 @@ def sigmoid_like_function(x, transition_point=1, steepness=1):
     quadratic_part = (x / transition_point) ** 2
     return 1 - tf.exp(-steepness * quadratic_part)
 
-
+#verified this is correct with dijbar by explicit calculation
 def geodesic_distance_CPn(cpoint1, cpoint2, kahler_t, metricijbar=None):
     # Calculate geodesic distance between two points in CP^n
     # Check if point1 and point2 are complex-valued
@@ -962,6 +962,14 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
         # Convert the points to tf.Variable so they're trainable
         realpoints = tf.Variable(realpoints, dtype=tf.float32)
 
+        if int(tf.math.real(pg.BASIS['NFOLD']))==1:
+            first_decrease_checkpoint=3e-4
+            second_decrease_checkpoint=5e-5
+
+        if int(tf.math.real(pg.BASIS['NFOLD']))==3:
+            first_decrease_checkpoint=1e-4
+            second_decrease_checkpoint=1e-5
+
         @tf.function
         def optimize_step():
             with tf.GradientTape() as tape:
@@ -977,12 +985,12 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
                 print(f"Iteration {i}: mean loss = {tf.reduce_mean(losses):.6e}, max loss = {tf.reduce_max(losses):.6e}")
             # Check if max_loss is below certain thresholds and decrease learning rate accordingly
             max_loss = tf.reduce_max(losses)
-            if max_loss < 1e-4 and not hasattr(optimizer, 'reduced_once'):
+            if max_loss < first_decrease_checkpoint and not hasattr(optimizer, 'reduced_once'):
                 new_learning_rate = optimizer.learning_rate * 0.1  # Decrease by one order of magnitude
                 optimizer.learning_rate.assign(new_learning_rate)
                 print(f"Decreased learning rate to {new_learning_rate:.2e}")
                 optimizer.reduced_once = True  # Mark that we've reduced the learning rate once
-            elif max_loss < 1e-5 and not hasattr(optimizer, 'reduced_twice'):
+            elif max_loss < second_decrease_checkpoint and not hasattr(optimizer, 'reduced_twice'):
                 new_learning_rate = optimizer.learning_rate * 0.01  # Decrease by two orders of magnitude
                 optimizer.learning_rate.assign(new_learning_rate)
                 print(f"Decreased learning rate to {new_learning_rate:.2e}")
@@ -1052,6 +1060,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
 
 
 
+#verified this is correct with dijbar by explicit calculation with geodesic
 def compute_Gijbar_from_Hijbar(Hijbar,cpoint,kahler_t=1.0):
     H = tf.einsum('iJ,i,J->',Hijbar,cpoint,tf.math.conj(cpoint))
     Hijbar_over_H = Hijbar/H
