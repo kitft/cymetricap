@@ -479,6 +479,8 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     
     points= pwo['point'][mask]
     points = tf.cast(points,tf.complex64)
+
+    t_i = int((1-val_split)*new_np)
     
 
     if normalize_to_vol_j:
@@ -522,6 +524,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     
     realpoints=tf.concat((X_train,X_val),axis=0)
     points=tf.complex(realpoints[:,0:ncoords],realpoints[:,ncoords:])
+
     new_np = len(realpoints)
     t_i = int((1-val_split)*new_np)
 
