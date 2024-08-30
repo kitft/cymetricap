@@ -973,6 +973,7 @@ class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
         self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
         self.kmoduli=BASIS['KMODULI']
         self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
+        self.dim_output=layer_sizes[-1]
                             
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
