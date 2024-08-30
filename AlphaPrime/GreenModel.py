@@ -129,7 +129,7 @@ class GreenModel(FSModel):
         self.special_metric=self.metricModel(self.special_point)
         self.kahler_t = float(self.BASIS['KMODULI'])
         self.geodesic_distance_vec_function= lambda cpoints: vectorized_geodesic_distance_CPn(
-            special_point=self.special_point,
+            self.special_point,
             cpoints,
             t=self.kahler_t,
             metricijbar=self.special_metric
