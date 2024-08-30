@@ -573,6 +573,9 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
 
 
     kahler_t=tf.math.real(BASIS['KMODULI'][0])
+    nfold = tf.shape(special_pullback)[0].numpy()
+    volume_for_sources = tf.cast(vol_k_no6 / np.math.factorial(nfold),tf.float32)
+    print('Volume for sources: ', volume_for_sources)
 
     special_point_complex=point_vec_to_complex(special_point)
     special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex64)
@@ -591,9 +594,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),tf.complex64)# this cast is extraneous
     inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),tf.complex64)# this cast is extraneous
 
-    nfold = tf.shape(special_pullback)[0]
-    volume_for_sources = vol_k_no6 / np.math.factorial(tf.cast(nfold, tf.float32))
-    print('Volume for sources: ', volume_for_sources)
+    
     
     sources_train = -1 * (1/volume_for_sources) * tf.ones_like(y_train[:, 0])
     sources_val = -1 * (1/volume_for_sources) * tf.ones_like(y_val[:, 0])
