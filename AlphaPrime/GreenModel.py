@@ -136,7 +136,7 @@ class GreenModel(FSModel):
             kahler_t=self.kahler_t,
             metricijbar=self.final_matrix
         )
-        #self.test_pulled_back_matrix()
+        self.test_pulled_back_matrix()
 
     def test_pulled_back_matrix(self):
         actual_metric_from_matrix=compute_Gijbar_from_Hijbar(self.final_matrix,point_vec_to_complex(self.special_point),self.kahler_t)
@@ -147,8 +147,6 @@ class GreenModel(FSModel):
         # Compare the pulled back matrix with special_metric
         is_equal = tf.reduce_all(tf.math.abs(pulled_back_matrix - self.special_metric) < 1e-6)
         tf.print("Is special_metric the pullback of final_matrix?", is_equal)
-        tf.print(pulled_back_matrix)
-        tf.print(self.special_metric)
         
         if not is_equal:
             tf.print("Warning: special_metric is not the pullback of final_matrix")
@@ -321,7 +319,10 @@ class GreenModel(FSModel):
             #automatically watch trainable vars
             # add other loss contributions.
             if self.learn_transition:
-                t_loss = self.compute_transition_loss(x)
+                if self.model.dim_output==1:
+                    t_loss = self.compute_transition_loss(x)
+                else:
+                    t_loss = tf.reduce_sum(self.compute_transition_loss(x),axis=-1)
             else:
                 t_loss = tf.zeros_like(x[:, 0])
             if self.learn_laplacian:
@@ -414,7 +415,8 @@ class GreenModel(FSModel):
         #omega = tf.expand_dims(y[:, -1], -1)
         #sigma_loss_cont = self.sigma_loss(omega, y_pred)**self.n[0]
         total_loss = self.alpha[0]*lpl_loss +\
-            self.alpha[1]*t_loss 
+            self.alpha[1]*t_loss+\
+            self.alpha[2]*lpl_special_loss
         # weight the loss.
         if sample_weight is not None:
             total_loss *= sample_weight
