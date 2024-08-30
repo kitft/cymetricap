@@ -34,6 +34,38 @@ class LaplacianLoss(tfk.metrics.Metric):
         self.laplacian_loss.assign(0)
         self.count.assign(0)
 
+class LaplaciaSpecialLoss(tfk.metrics.Metric):
+    def __init__(self, name='laplacian_special_loss', **kwargs):
+        super(LaplacianSpecialLoss, self).__init__(name=name, **kwargs)
+        self.laplacian_loss = self.add_weight(name='lpls', initializer='zeros')
+        self.count = self.add_weight(name='count', initializer='zeros')
+
+    def update_state(self, values, sample_weight=None):
+        """
+        Args:
+            values: tupe (data['X_val'], data['y_val'])
+            sample_weight: sample weights for the validation set (Default: None)
+
+        Returns:
+
+        """
+        loss = values['laplacian_loss']
+        if sample_weight is not None:
+            sample_weight = tf.cast(sample_weight, self.dtype)
+            loss = tf.multiply(loss, sample_weight)
+        new_value = (tf.reduce_mean(loss, axis=-1) - self.laplacian_loss)/(self.count+1)
+        self.laplacian_loss.assign_add(new_value)
+        #tf.print("hiasg")
+        #tf.print(tf.shape(self.laplacian_loss))
+        self.count.assign_add(1)
+
+    def result(self):
+        return self.laplacian_loss
+
+    def reset_state(self):
+        self.laplacian_loss.assign(0)
+        self.count.assign(0)
+
 
 
 def laplacian_measure_loss(model, validation_data):
