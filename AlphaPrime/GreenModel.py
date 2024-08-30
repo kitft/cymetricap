@@ -227,10 +227,14 @@ class GreenModel(FSModel):
         cpoints=point_vec_to_complex(input_tensor)
         geodesic_distance= self.geodesic_distance_vec_function(cpoints)
         local_model=self.local_model_of_greens_function(geodesic_distance)
-        to_multiply_nn=self.sigmoid_for_nn(geodesic_distance)
-        nn_prediction=self.model(input_tensor)[:,0]#take 0th so its shape is a pure vector.
 
-        return local_model+nn_prediction*to_multiply_nn
+        to_multiply_nn_global=self.sigmoid_for_nn(geodesic_distance)
+        to_multiply_nn_local=1-to_multiply_nn_global
+        to_dot_to_nn=tf.stack([to_multiply_nn_global,to_multiply_nn_local],axis=-1)
+        nn_prediction=self.model(input_tensor)#take 0th so its shape is a pure vector.
+        nn_prediction_out=tf.einsum('...i,...i->...',to_dot_to_nn,nn_prediction)
+
+        return local_model+nn_prediction_out
         
 
     def local_model_of_greens_function(self,geodesic_distance):
