@@ -432,7 +432,7 @@ class GreenModel(FSModel):
         self.model.save(filepath=filepath, **kwargs)
 
 
-def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BASIS,val_split=0.1, ltails=0, rtails=0, normalize_to_vol_j=True,batch_size=100):
+def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BASIS,val_split=0.1, ltails=0, rtails=0, normalize_to_vol_j=True,batch_size=100,max_tolerance_for_gradient_descent=1e-7):
     r"""Prepares training and validation data from point_gen.
 
     Note:
@@ -579,7 +579,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     min_radius=0.005
     num_points=len(ys)
 
-    points_around_special=get_points_around_special(special_point_complex,radius,num_points,point_gen,uniform_on_radius=True,min_radius=min_radius,final_matrix=final_matrix,kahler_t=kahler_t)
+    points_around_special=get_points_around_special(special_point_complex,radius,num_points,point_gen,uniform_on_radius=True,min_radius=min_radius,final_matrix=final_matrix,kahler_t=kahler_t,max_tolerance_for_gradient_descent=max_tolerance_for_gradient_descent)
     points_around_special=point_vec_to_real(points_around_special)
     special_points_train=points_around_special[0:t_i]
     special_points_val=points_around_special[t_i:]
@@ -875,7 +875,7 @@ def vectorized_geodesic_distance_CPn(special_point, cpoints, kahler_t=1.0, metri
         cpoints
     )
 
-def get_points_around_special(special_point_complex,radius,num_points,pg,uniform_on_radius=False,min_radius=0.01,final_matrix=None,kahler_t=1.0):
+def get_points_around_special(special_point_complex,radius,num_points,pg,uniform_on_radius=False,min_radius=0.01,final_matrix=None,kahler_t=1.0,max_tolerance_for_gradient_descent=1e-7):
     num_points_to_generate=num_points*2
 
     def poly(cpoints,pg):
@@ -981,7 +981,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
 
 
     # Perform gradient descent
-    optimized_points, final_losses = gradient_descent_vectorized(initial_points, poly_normed_abs_val_takes_real,pg)
+    optimized_points, final_losses = gradient_descent_vectorized(initial_points, poly_normed_abs_val_takes_real,pg,max_tolerance=max_tolerance_for_gradient_descent)
     optimized_points=tf.constant(pg._rescale_points(optimized_points.numpy()))
     optimized_distances_CPn = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t)
     optimized_distances_matrix = vectorized_geodesic_distance_CPn(special_point_complex, optimized_points, kahler_t=kahler_t, metricijbar=final_matrix)
