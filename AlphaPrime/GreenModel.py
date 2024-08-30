@@ -139,7 +139,7 @@ class GreenModel(FSModel):
         #self.test_pulled_back_matrix()
 
     def test_pulled_back_matrix(self):
-        actual_metric_from_matrix=compute_Gijbar_from_Hijbar(self.final_matrix,self.special_point,self.kahler_t)
+        actual_metric_from_matrix=compute_Gijbar_from_Hijbar(self.final_matrix,point_vec_to_complex(self.special_point),self.kahler_t)
         pulled_back_matrix = tf.einsum('ai,BJ,iJ->aB', 
                                        self.special_pullback,tf.math.conj(self.special_pullback), 
                                        actual_metric_from_matrix)
