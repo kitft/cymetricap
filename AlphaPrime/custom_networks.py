@@ -902,6 +902,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
             #print(tf.shape(inputs))
         #print(len(self.layers_list))
         ### incorrect!
+        return out
         out=(1/np.pi)*(1/2**(len(self.layers_list)))*self.layers_list[-1](tf.math.log(tf.math.abs(inputs)))
         return tf.clip_by_value(out,-1e6,1e6)
 
