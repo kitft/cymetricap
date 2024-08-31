@@ -828,83 +828,83 @@ def bihomogeneous_section_for_prod_not_mult(points,BASIS):
     sectimessecbar_over_kappa= tf.concat(toconcat,axis=-1)
     return sectimessecbar_over_kappa
 
-class SquareDenseVar(tf.keras.layers.Layer):
-    def __init__(self, input_dim, units, activation=tf.square, stddev=0.05,trainable=True,positive_init=True):
-        super(SquareDenseVar, self).__init__()
-        w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
-        self.w = tf.Variable(
-            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
-            trainable=trainable,
-        )
-        self.activation = activation 
+# class SquareDenseVar(tf.keras.layers.Layer):
+#     def __init__(self, input_dim, units, activation=tf.square, stddev=0.05,trainable=True,positive_init=True):
+#         super(SquareDenseVar, self).__init__()
+#         w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
+#         self.w = tf.Variable(
+#             initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
+#             trainable=trainable,
+#         )
+#         self.activation = activation 
 
-    def call(self, inputs):
-        return self.activation(tf.matmul(inputs, self.w)) 
+#     def call(self, inputs):
+#         return self.activation(tf.matmul(inputs, self.w)) 
 
-class SquareDenseVarNoAct(tf.keras.layers.Layer):
-    def __init__(self, input_dim, units, stddev=0.05,trainable=True,positive_init=True):
-        super(SquareDenseVarNoAct, self).__init__()
-        w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
-        self.w = tf.Variable(
-            #initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')),
-            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
-            #initial_value=w_init(shape=(input_dim, units), dtype='float64'),
-            trainable=trainable,
-        )
+# class SquareDenseVarNoAct(tf.keras.layers.Layer):
+#     def __init__(self, input_dim, units, stddev=0.05,trainable=True,positive_init=True):
+#         super(SquareDenseVarNoAct, self).__init__()
+#         w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
+#         self.w = tf.Variable(
+#             #initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')),
+#             initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
+#             #initial_value=w_init(shape=(input_dim, units), dtype='float64'),
+#             trainable=trainable,
+#         )
 
-    def call(self, inputs):
-        return tf.matmul(inputs, self.w)
+#     def call(self, inputs):
+#         return tf.matmul(inputs, self.w)
 
-class BiholoModelFuncGENERAL(tf.keras.Model):
-    def __init__(self, layer_sizes,BASIS,activation=tf.square,stddev=0.1,use_zero_network=False):
-        super().__init__()
-        #self.layers_list = [tf.keras.layers.Dense(units=size, activation=tf.math.square, use_bias=False)
-        set_stddev= stddev#decide init
-        self.layers_list = [SquareDenseVar(input_dim=layer_sizes[i],units=layer_sizes[i+1],stddev=set_stddev,activation=activation)
-                            for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
+# class BiholoModelFuncGENERAL(tf.keras.Model):
+#     def __init__(self, layer_sizes,BASIS,activation=tf.square,stddev=0.1,use_zero_network=False):
+#         super().__init__()
+#         #self.layers_list = [tf.keras.layers.Dense(units=size, activation=tf.math.square, use_bias=False)
+#         set_stddev= stddev#decide init
+#         self.layers_list = [SquareDenseVar(input_dim=layer_sizes[i],units=layer_sizes[i+1],stddev=set_stddev,activation=activation)
+#                             for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
 
-        self.layers_list += [SquareDenseVarNoAct(input_dim=layer_sizes[len(layer_sizes)-2],units=layer_sizes[len(layer_sizes)-1],stddev=set_stddev)]
-        #i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
+#         self.layers_list += [SquareDenseVarNoAct(input_dim=layer_sizes[len(layer_sizes)-2],units=layer_sizes[len(layer_sizes)-1],stddev=set_stddev)]
+#         #i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
 
-        #self.layers_list = [tfk.layers.Dense(units=layer_sizes[i+1],activation=activation)
-        #                    for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
-        #self.layers_list += [tfk.layers.Dense(units=layer_sizes[len(layer_sizes)-1],activation=None)]
-        ##i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
-        final_layer_inits=tf.keras.initializers.Ones if (not use_zero_network) else tf.keras.initializers.Zeros
-        self.layers_list+=[tf.keras.layers.Dense(units=1, use_bias=False,kernel_initializer=final_layer_inits)]# add the extra free parameter after the log
-        self.BASIS=BASIS
-        self.nCoords=tf.reduce_sum(tf.cast(BASIS['AMBIENT'],tf.int32)+1)
-        self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
-        self.kmoduli=BASIS['KMODULI']
-        if len(self.ambient)==1:
-            print("using single ambient surface bihom func generator")
-            self.bihom_func= bihom_function_generatorQorT(np.array(self.ambient),len(self.ambient),self.kmoduli)
-        else:
-            print("using multi ambient surface bihom func generator")
-            self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
-        print("no, using id")
-        self.bihom_func = self.identity
-    def identity(self, inputs):
-        return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
+#         #self.layers_list = [tfk.layers.Dense(units=layer_sizes[i+1],activation=activation)
+#         #                    for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
+#         #self.layers_list += [tfk.layers.Dense(units=layer_sizes[len(layer_sizes)-1],activation=None)]
+#         ##i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
+#         final_layer_inits=tf.keras.initializers.Ones if (not use_zero_network) else tf.keras.initializers.Zeros
+#         self.layers_list+=[tf.keras.layers.Dense(units=1, use_bias=False,kernel_initializer=final_layer_inits)]# add the extra free parameter after the log
+#         self.BASIS=BASIS
+#         self.nCoords=tf.reduce_sum(tf.cast(BASIS['AMBIENT'],tf.int32)+1)
+#         self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
+#         self.kmoduli=BASIS['KMODULI']
+#         if len(self.ambient)==1:
+#             print("using single ambient surface bihom func generator")
+#             self.bihom_func= bihom_function_generatorQorT(np.array(self.ambient),len(self.ambient),self.kmoduli)
+#         else:
+#             print("using multi ambient surface bihom func generator")
+#             self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
+#         print("no, using id")
+#         self.bihom_func = self.identity
+#     def identity(self, inputs):
+#         return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
     
-    def call(self, inputs):
-        #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
-        inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
-        #print("ncCoords" +  str(self.nCoords))
-        #norm=tf.math.abs(tf.norm(inputs,axis=-1))
-        inputs =self.bihom_func(inputs)
-        #print(tf.shape(inputs))
-        #print(tf.shape(inputs))
-        #return tf.math.log(tf.reduce_sum(inputs,axis=-1))
-        for layer in self.layers_list[:-1]:
-            inputs = layer(inputs)
-            #print(tf.shape(inputs))
-        #print(len(self.layers_list))
-        ### incorrect!
-        return self.layers_list[-1](inputs)
-        out=(1/np.pi)*(1/2**(len(self.layers_list)))*self.layers_list[-1](tf.math.log(tf.math.abs(inputs)))
-        return tf.clip_by_value(out,-1e6,1e6)
+#     def call(self, inputs):
+#         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
+#         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+#         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
+#         #print("ncCoords" +  str(self.nCoords))
+#         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
+#         inputs =self.bihom_func(inputs)
+#         #print(tf.shape(inputs))
+#         #print(tf.shape(inputs))
+#         #return tf.math.log(tf.reduce_sum(inputs,axis=-1))
+#         for layer in self.layers_list[:-1]:
+#             inputs = layer(inputs)
+#             #print(tf.shape(inputs))
+#         #print(len(self.layers_list))
+#         ### incorrect!
+#         return self.layers_list[-1](inputs)
+#         out=(1/np.pi)*(1/2**(len(self.layers_list)))*self.layers_list[-1](tf.math.log(tf.math.abs(inputs)))
+#         return tf.clip_by_value(out,-1e6,1e6)
 
 class SquareDenseVar(tf.keras.layers.Layer):
     def __init__(self, input_dim, units, activation=tf.square, stddev=0.05, trainable=True, positive_init=True):
@@ -934,6 +934,7 @@ class SquareDenseVarNoAct(tf.keras.layers.Layer):
 class BiholoModelFuncGENERAL(tf.keras.Model):
     def __init__(self, layer_sizes, BASIS, activation=tf.square, stddev=0.1, use_zero_network=False):
         super().__init__()
+        print("activation for biholo model func general: ", activation)
         self.BASIS = BASIS
         self.nCoords = tf.reduce_sum(tf.cast(BASIS['AMBIENT'], tf.int32) + 1)
         self.ambient = tf.cast(BASIS['AMBIENT'], tf.int32)
@@ -963,6 +964,11 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         else:
             print("Using multi ambient surface bihom func generator")
             self.bihom_func = bihom_function_generator(np.array(self.ambient), len(self.ambient), self.kmoduli)
+        print("no, using identity")
+        self.bihom_func = self.identity
+
+    def identity(self, inputs):
+        return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
 
     def call(self, inputs):
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
