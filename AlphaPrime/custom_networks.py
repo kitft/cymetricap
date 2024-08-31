@@ -886,7 +886,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         #self.bihom_func = self.identity
     #def identity(self, inputs):
     #    return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
-    @tf.function
+    @tf.function# is this the problem???
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))

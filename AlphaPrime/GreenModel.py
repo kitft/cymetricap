@@ -1164,7 +1164,7 @@ def optimize_matrix(rpoint, pullback, g_CY, v_list, weights, learning_rate=0.1, 
     m=n**2
     
     # Initialize parameters for all initializations
-    initial_params = tf.random.normal((n_init, m))
+    initial_params = tf.random.normal((n_init, m),dtype=tf.float64)
     vecs = tf.Variable(initial_params)
     optimizer = tf.keras.optimizers.Adam(learning_rate)
     
