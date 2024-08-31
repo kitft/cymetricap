@@ -748,25 +748,24 @@ def train_modelgreen(greenmodel, data_train, optimizer=None, epochs=50, batch_si
 
         #add learning rate schedule
         # if loss is not decreasing, reduce learning rate
+        if epoch > 5 and hist1['laplacian_loss'][-1] > hist1['laplacian_loss'][-2]:
+            greenmodel.optimizer.learning_rate.assign(greenmodel.optimizer.learning_rate * 0.9)
+            print("cutting LR, multiplying by 0.9 - new LR: " + str(greenmodel.optimizer.learning_rate.numpy()))
 
-        if epoch>5 and hist1['laplacian_loss'][-1]>hist1['laplacian_loss'][-2]:
-            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.9
-            print("cutting LR, multiplying by 0.9 - new LR: " + str(greenmodel.optimizer.lr))
-
-        #after 30 epochs, decrease learning rate by factor of 2
-        if epoch==10:
-            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.5
-            print("cutting LR, multiplying by 0.1 - new LR: " + str(greenmodel.optimizer.lr))
+        # after 30 epochs, decrease learning rate by factor of 2
+        if epoch == 10:
+            greenmodel.optimizer.learning_rate.assign(greenmodel.optimizer.learning_rate * 0.5)
+            print("cutting LR, multiplying by 0.5 - new LR: " + str(greenmodel.optimizer.learning_rate.numpy()))
 
         # after 60 epochs, decrease lr by a factor of 2
-        if epoch==20:
-            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.5
-            print("cutting LR, multiplying by 0.1 - new LR: " + str(greenmodel.optimizer.lr))
+        if epoch == 20:
+            greenmodel.optimizer.learning_rate.assign(greenmodel.optimizer.learning_rate * 0.5)
+            print("cutting LR, multiplying by 0.5 - new LR: " + str(greenmodel.optimizer.learning_rate.numpy()))
 
-        #after 90 epochs, decrease lr by a factor of 5
-        if epoch==30:
-            greenmodel.optimizer.lr = greenmodel.optimizer.lr*0.5
-            print("cutting LR, multiplying by 0.1 - new LR: " + str(greenmodel.optimizer.lr))
+        # after 90 epochs, decrease lr by a factor of 2
+        if epoch == 30:
+            greenmodel.optimizer.learning_rate.assign(greenmodel.optimizer.learning_rate * 0.5)
+            print("cutting LR, multiplying by 0.5 - new LR: " + str(greenmodel.optimizer.learning_rate.numpy()))
 
         if tf.math.is_nan(hist1['loss'][-1]):
             break
