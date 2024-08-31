@@ -287,7 +287,6 @@ class FSModel(tfk.Model):
             tf.tensor([bSize, nhyper], tf.int64): max(dQ/dz) index per hyper.
         """
         # creates coordinate mask with patch coordinates
-        print("delete: points",points.dtype)
         cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
         available_mask = tf.cast(self._get_inv_one_mask(points), dtype=tf.complex128)
 
@@ -533,7 +532,6 @@ class FSModel(tfk.Model):
             tf.tensor([bSize, ncoords], tf.complex): dQdz at each point.
         """
         p_exp = tf.expand_dims(tf.expand_dims(points, 1), 1)
-        print("p_exp",points.dtype,p_exp.dtype)
         dQdz = tf.math.pow(p_exp, self.BASIS['DQDZB'+str(k)])
         dQdz = tf.math.reduce_prod(dQdz, axis=-1)
         dQdz = tf.math.multiply(self.BASIS['DQDZF'+str(k)], dQdz)

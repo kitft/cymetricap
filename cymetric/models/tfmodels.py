@@ -410,7 +410,7 @@ class FreeModel(FSModel):
         # Compute gradients
         gradients = tape.gradient(total_loss_sum, trainable_vars)
         # remove nans and gradient clipping from transition loss.
-        gradients = [tf.where(tf.math.is_nan(g), 1e-8, g) for g in gradients]
+        gradients = [tf.where(tf.math.is_nan(g), tf.cast(1e-8, g.dtype), g) for g in gradients]
         gradients, _ = tf.clip_by_global_norm(gradients, self.gclipping)
         # Update weights
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
