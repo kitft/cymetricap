@@ -974,8 +974,8 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
 
     def call(self, inputs):
-        inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
-        inputs = self.bihom_func(inputs)
+        #inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
+        #inputs = self.bihom_func(inputs)
         return self.model(inputs)
 
 
