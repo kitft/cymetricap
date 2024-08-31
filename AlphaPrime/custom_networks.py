@@ -942,23 +942,24 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         self.ambient = tf.cast(BASIS['AMBIENT'], tf.int32)
         self.kmoduli = BASIS['KMODULI']
 
-        self.layers_list = []
+        self.model = tf.keras.Sequential()
+        
         for i in range(len(layer_sizes) - 2):
-            self.layers_list.append(SquareDenseVar(
+            self.model.add(SquareDenseVar(
                 input_dim=layer_sizes[i],
                 units=layer_sizes[i+1],
                 stddev=stddev,
                 activation=activation
             ))
         
-        self.layers_list.append(SquareDenseVarNoAct(
+        self.model.add(SquareDenseVarNoAct(
             input_dim=layer_sizes[-2],
             units=layer_sizes[-1],
             stddev=stddev
         ))
 
         final_layer_init = tf.keras.initializers.Zeros if use_zero_network else tf.keras.initializers.Ones
-        self.final_layer = tf.keras.layers.Dense(units=1, use_bias=False, kernel_initializer=final_layer_init)
+        self.model.add(tf.keras.layers.Dense(units=1, use_bias=False, kernel_initializer=final_layer_init))
 
         if len(self.ambient) == 1:
             print("Using single ambient surface bihom func generator")
@@ -975,11 +976,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
     def call(self, inputs):
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         inputs = self.bihom_func(inputs)
-        
-        for layer in self.layers_list:
-            inputs = layer(inputs)
-        
-        return self.final_layer(inputs)
+        return self.model(inputs)
 
 
 # class BiholoModelFuncGENERALforHYMinv(tf.keras.Model):
