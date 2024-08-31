@@ -1049,6 +1049,66 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
 #         #print("new inv")
 #         return  self.layers_list[-1](tf.math.log(inputs))-self.layers_list2[-1](tf.math.log(inputs2))
 #         #return  -self.layers_list[-1](tf.math.log(inputs))
+
+class BiholoModelFuncforMetric(tf.keras.Model):
+    def __init__(self, layer_sizes,BASIS,activation=tf.square,stddev=0.1,use_zero_network=False,constant_multiplier=1.0):
+        super().__init__()
+        #self.layers_list = [tf.keras.layers.Dense(units=size, activation=tf.math.square, use_bias=False)
+        #set_stddev= 0. if use_zero_network else stddev#decide init
+        # self.layers_list = [SquareDenseVar(input_dim=layer_sizes[i],units=layer_sizes[i+1],stddev=set_stddev,activation=activation)
+        #                     for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
+        # self.layers_list += [SquareDenseVarNoAct(input_dim=layer_sizes[len(layer_sizes)-2],units=layer_sizes[len(layer_sizes)-1],stddev=set_stddev)]
+        # #i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
+        # self.layers_list+=[tf.keras.layers.Dense(units=1, use_bias=False,kernel_initializer=tf.keras.initializers.Ones)]# add the extra free parameter after the log
+        # self.layers_list2 = [SquareDenseVar(input_dim=layer_sizes[i],units=layer_sizes[i+1],stddev=set_stddev,activation=activation)
+        #                      for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
+        # self.layers_list2 += [SquareDenseVarNoAct(input_dim=layer_sizes[len(layer_sizes)-2],units=layer_sizes[len(layer_sizes)-1],stddev=set_stddev)]
+        #self.layers_list2+=[tf.keras.layers.Dense(units=1, use_bias=False,kernel_initializer=tf.keras.initializers.Ones)]# add the extra free parameter after the log
+        # #i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
+        final_layer_inits=tf.keras.initializers.Ones if (not use_zero_network) else tf.keras.initializers.Zeros
+
+        self.layers_list = [tf.keras.layers.Dense(units=layer_sizes[i+1],activation=activation)
+                            for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
+        self.layers_list += [tf.keras.layers.Dense(units=layer_sizes[len(layer_sizes)-1],activation=activation)]
+        self.layers_list+=[tf.keras.layers.Dense(units=layer_sizes[-1], use_bias=False,kernel_initializer=final_layer_inits)]# add the extra free parameter after the log
+
+        self.BASIS=BASIS
+        self.nCoords=tf.reduce_sum(tf.cast(BASIS['AMBIENT'],tf.int32)+1)
+        self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
+        self.kmoduli=BASIS['KMODULI']
+        if len(self.ambient)==1:
+            print("using single ambient surface bihom func generator")
+            self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
+        else:
+            print("using multi ambient surface bihom func generator")
+            self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
+        self.dim_output=layer_sizes[-1]
+        self.constant_multiplier=constant_multiplier
+                            
+    def call(self, inputs):
+        #sum_coords=(tf.reduce_sum(inputs,axis=-1))
+        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+        inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
+        #print("ncCoords" +  str(self.nCoords))
+        #norm=tf.math.abs(tf.norm(inputs,axis=-1))
+        bihom =self.bihom_func(inputs)
+
+        #bihom =bihomogeneous_section_for_prod_not_mult(inputs,self.BASIS)
+        #print(tf.shape(inputs))
+        #print(tf.shape(inputs))
+        #return tf.math.log(tf.reduce_sum(inputs,axis=-1))
+        inputs= bihom
+        inputs2= bihom
+        for layer in self.layers_list[:-1]:
+            inputs = layer(inputs)
+            #print(tf.shape(inputs))
+        #print(len(self.layers_list))
+        ### incorrect!
+        #print("new inv")
+        #return  self.layers_list[-1](inputs)/self.layers_list2[-1](inputs2)
+        out=self.layers_list[-1](tf.math.log(tf.math.abs(inputs)))#-self.layers_list2[-1](tf.math.log(tf.math.abs(inputs2)))
+        return self.constant_multiplier*tf.clip_by_value(out,-1e6,1e6)
+        #return  -self.layers_list[-1](tf.math.log(inputs))
     
 class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
     def __init__(self, layer_sizes,BASIS,activation=tf.square,stddev=0.1,use_zero_network=False,constant_multiplier=1.0):
