@@ -1008,6 +1008,7 @@ class PointGenerator:
         dtype = np.dtype(data_types)
         points = self.generate_points(n_pw)
 
+        print('unthrow')
         # Throw away points for which the patch is ambiguous, since too many coordiantes are too close to 1
         #inv_one_mask = np.isclose(points, complex(1, 0))
         #bad_indices = np.where(np.sum(inv_one_mask, -1) != len(self.kmoduli))
