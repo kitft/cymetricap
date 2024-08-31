@@ -943,19 +943,17 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         self.kmoduli = BASIS['KMODULI']
 
         self.model = tf.keras.Sequential()
-        
         for i in range(len(layer_sizes) - 2):
-            self.model.add(SquareDenseVar(
-                input_dim=layer_sizes[i],
+            self.model.add(tf.keras.layers.Dense(
                 units=layer_sizes[i+1],
-                stddev=stddev,
-                activation=activation
+                activation=activation,
+                kernel_initializer=tf.keras.initializers.RandomNormal(stddev=stddev)
             ))
         
-        self.model.add(SquareDenseVarNoAct(
-            input_dim=layer_sizes[-2],
+        self.model.add(tf.keras.layers.Dense(
             units=layer_sizes[-1],
-            stddev=stddev
+            activation=None,
+            kernel_initializer=tf.keras.initializers.RandomNormal(stddev=stddev)
         ))
 
         final_layer_init = tf.keras.initializers.Zeros if use_zero_network else tf.keras.initializers.Ones
