@@ -1313,8 +1313,8 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
     if not tf.is_tensor(special_point):
         raise TypeError("special_point must be a tensor")
     
-    if special_point.dtype not in [tf.float232, tf.float64]:
-        raise TypeError(f"Expected special_point to be a real tensor (float232 or float64), but got {special_point.dtype}")
+    if special_point.dtype not in [tf.float32, tf.float64]:
+        raise TypeError(f"Expected special_point to be a real tensor (float32 or float64), but got {special_point.dtype}")
     
     n=tf.shape(special_pullback)[-1]
     kernel_basis = analyze_pullback_kernel(special_pullback, special_point)
