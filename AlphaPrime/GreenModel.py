@@ -970,8 +970,8 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
         dim = tf.cast(diminteger,tf.float64)  # Complex dimension
 
         # Generate random complex directions
-        directions_real = tf.random.normal((num_points, diminteger))
-        directions_imag = tf.random.normal((num_points, diminteger))
+        directions_real = tf.random.normal((num_points, diminteger),dtype=tf.float64)
+        directions_imag = tf.random.normal((num_points, diminteger),dtype=tf.float64)
         directions = tf.complex(directions_real, directions_imag)
         directions = directions / tf.norm(directions, axis=1, keepdims=True)
 
