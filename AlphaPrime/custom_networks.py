@@ -261,6 +261,8 @@ class bihom_function_generator(tf.Module):
             
             k_fs += _fubini_study_n_potentials(cpoints, self.kmoduli[i])
             kappas = tf.reduce_sum(tf.abs(cpoints)**2, axis=-1)
+            tf.print("dtypes of kappas, cpoints, points, etc.")
+            tf.print(kappas.dtype, cpoints.dtype, points.dtype)
             kappas_prod *= kappas
 
             real, imag = getrealandimagofprod(cpoints)
