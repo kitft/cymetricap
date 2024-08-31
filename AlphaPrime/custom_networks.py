@@ -885,7 +885,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         print("no, using id")
         self.bihom_func = self.identity
     def identity(self, inputs):
-        return inputs
+        return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
     
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
