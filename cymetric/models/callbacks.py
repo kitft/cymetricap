@@ -53,10 +53,10 @@ class KaehlerCallback(tfk.callbacks.Callback):
         """
         super(KaehlerCallback, self).__init__()
         self.X_val, self.y_val = validation_data
-        self.X_val = tf.cast(self.X_val, tf.float32)
-        self.y_val = tf.cast(self.y_val, tf.float32)
-        self.weights = tf.cast(self.y_val[:, -2], tf.float32)
-        self.omega = tf.cast(self.y_val[:, -1], tf.float32)
+        self.X_val = tf.cast(self.X_val, tf.float64)
+        self.y_val = tf.cast(self.y_val, tf.float64)
+        self.weights = tf.cast(self.y_val[:, -2], tf.float64)
+        self.omega = tf.cast(self.y_val[:, -1], tf.float64)
         self.nth = nth
         self.bSize = bSize
         self.initial = initial
@@ -129,12 +129,12 @@ class RicciCallback(tfk.callbacks.Callback):
         """
         super(RicciCallback, self).__init__()
         self.X_val, self.y_val = validation_data
-        self.X_val = tf.cast(self.X_val, tf.float32)
-        self.y_val = tf.cast(self.y_val, tf.float32)
-        self.weights = tf.cast(self.y_val[:, -2], tf.float32)
+        self.X_val = tf.cast(self.X_val, tf.float64)
+        self.y_val = tf.cast(self.y_val, tf.float64)
+        self.weights = tf.cast(self.y_val[:, -2], tf.float64)
         self.vol_cy = tf.math.reduce_mean(self.weights, axis=-1)
-        self.omega = tf.cast(self.y_val[:, -1], tf.float32)
-        self.pullbacks = tf.cast(pullbacks, tf.complex64)
+        self.omega = tf.cast(self.y_val[:, -1], tf.float64)
+        self.pullbacks = tf.cast(pullbacks, tf.complex128)
         self.verbose = verbose
         self.hlevel = hlevel
         self.nth = nth
@@ -150,20 +150,20 @@ class RicciCallback(tfk.callbacks.Callback):
         """
         if epoch % self.nth == 0:
             n_p = len(self.X_val)
-            nfold = tf.cast(tf.math.real(self.model.nfold), dtype=tf.float32)
+            nfold = tf.cast(tf.math.real(self.model.nfold), dtype=tf.float64)
             ricci_scalars, dets = [], []
-            dataset = tf.data.Dataset.from_tensor_slices((self.X_val, tf.cast(self.pullbacks, dtype=tf.complex64)))
+            dataset = tf.data.Dataset.from_tensor_slices((self.X_val, tf.cast(self.pullbacks, dtype=tf.complex128)))
             dataset = dataset.batch(self.bSize)
             for X_batch, pullbacks_batch in dataset:
                 ricci_scalars_batch, dets_batch = ricci_scalar_tf(self.model, X_batch, pullbacks=pullbacks_batch, verbose=self.verbose, rdet=True)
                 ricci_scalars += ricci_scalars_batch.numpy().tolist()
                 dets += dets_batch.numpy().tolist()
             
-            ricci_scalars = tf.cast(ricci_scalars, dtype=tf.float32)
-            dets = tf.cast(dets, dtype=tf.float32)
+            ricci_scalars = tf.cast(ricci_scalars, dtype=tf.float64)
+            dets = tf.cast(dets, dtype=tf.float64)
             ricci_scalars = tf.math.abs(ricci_scalars)
             det_over_omega = dets / self.omega
-            det_over_omega = tf.cast(tf.math.real(det_over_omega), dtype=tf.float32)
+            det_over_omega = tf.cast(tf.math.real(det_over_omega), dtype=tf.float64)
             vol_k = tf.math.reduce_mean(det_over_omega * self.weights, axis=-1)
             ricci = (vol_k**(1/nfold) / self.vol_cy) * tf.math.reduce_mean(
                 det_over_omega * ricci_scalars * self.weights, axis=-1)
@@ -214,8 +214,8 @@ class SigmaCallback(tfk.callbacks.Callback):
         """
         super(SigmaCallback, self).__init__()
         self.X_val, self.y_val = validation_data
-        self.X_val = tf.cast(self.X_val, tf.float32)
-        self.y_val = tf.cast(self.y_val, tf.float32)
+        self.X_val = tf.cast(self.X_val, tf.float64)
+        self.y_val = tf.cast(self.y_val, tf.float64)
         self.initial = initial
 
     def on_epoch_end(self, epoch, logs=None):
@@ -257,8 +257,8 @@ class TransitionCallback(tfk.callbacks.Callback):
         """
         super(TransitionCallback, self).__init__()
         self.X_val, self.y_val = validation_data
-        self.X_val = tf.cast(self.X_val, tf.float32)
-        self.y_val = tf.cast(self.y_val, tf.float32)
+        self.X_val = tf.cast(self.X_val, tf.float64)
+        self.y_val = tf.cast(self.y_val, tf.float64)
         self.initial = initial
         
     def on_epoch_end(self, epoch, logs=None):
@@ -306,11 +306,11 @@ class VolkCallback(tfk.callbacks.Callback):
         """
         super(VolkCallback, self).__init__()
         self.X_val, self.y_val = validation_data
-        self.X_val = tf.cast(self.X_val, tf.float32)
-        self.y_val = tf.cast(self.y_val, tf.float32)
-        self.weights = tf.cast(self.y_val[:, -2], dtype=tf.float32)
-        self.omega = tf.cast(self.y_val[:, -1], dtype=tf.float32)
-        self.nfold = tf.cast(nfold, dtype=tf.float32)
+        self.X_val = tf.cast(self.X_val, tf.float64)
+        self.y_val = tf.cast(self.y_val, tf.float64)
+        self.weights = tf.cast(self.y_val[:, -2], dtype=tf.float64)
+        self.omega = tf.cast(self.y_val[:, -1], dtype=tf.float64)
+        self.nfold = tf.cast(nfold, dtype=tf.float64)
         # NOTE: Check that convention is consistent with rest of code.
         self.factor = float(1.)
         self.initial = initial

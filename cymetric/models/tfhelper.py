@@ -4,12 +4,12 @@ A collection of various helper functions.
 import tensorflow as tf
 
 
-def prepare_tf_basis(basis, dtype=tf.complex64):
+def prepare_tf_basis(basis, dtype=tf.complex128):
     r"""Casts each entry in Basis to dtype.
 
     Args:
         basis (dict): dictionary containing geometric information
-        dtype (_type_, optional): type to cast to. Defaults to tf.complex64.
+        dtype (_type_, optional): type to cast to. Defaults to tf.complex128.
 
     Returns:
         dict: with tensors rather than ndarrays
@@ -73,7 +73,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         if verbose > 0:
             print("\nEpoch {:2d}/{:d}".format(epoch + 1, epochs))
         steps_per_epoch = len(data['X_train']) // batch_size
-        dataset = tf.data.Dataset.from_tensor_slices((tf.cast(data['X_train'],tf.float32), tf.cast(data['y_train'],tf.float32)))
+        dataset = tf.data.Dataset.from_tensor_slices((tf.cast(data['X_train'],tf.float64), tf.cast(data['y_train'],tf.float64)))
         dataset = dataset.batch(batch_size).repeat()
         #repeat to ensure we don't run out of data 
         history = fsmodel.fit(
@@ -93,7 +93,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         fsmodel.learn_ricci = tf.cast(False, dtype=tf.bool)
         fsmodel.learn_ricci_val = tf.cast(False, dtype=tf.bool)
         fsmodel.learn_volk = tf.cast(True, dtype=tf.bool)
-        dataset = tf.data.Dataset.from_tensor_slices((tf.cast(data['X_train'],tf.float32), tf.cast(data['y_train'],tf.float32)))
+        dataset = tf.data.Dataset.from_tensor_slices((tf.cast(data['X_train'],tf.float64), tf.cast(data['y_train'],tf.float64)))
         dataset = dataset.batch(batch_size).repeat()
         steps_per_epoch = len(data['X_train']) // batch_size
 

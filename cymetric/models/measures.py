@@ -15,8 +15,8 @@ def sigma_measure(model, points, y_true):
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
-        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
-        y_true (tensor[(n_p,2), tf.float32]): (weights,  Omega \wedge \bar(\Omega)|_p)
+        points (tensor[(n_p,2*ncoord), tf.float64]): NN input
+        y_true (tensor[(n_p,2), tf.float64]): (weights,  Omega \wedge \bar(\Omega)|_p)
 
     Returns:
         tf.float: sigma measure
@@ -30,7 +30,7 @@ def sigma_measure(model, points, y_true):
     volume_cy = tf.math.reduce_mean(weights, axis=-1)
     vol_k = tf.math.reduce_mean(det_over_omega * weights, axis=-1)
     ratio = volume_cy / vol_k
-    sigma_integrand = tf.abs(tf.ones(tf.shape(det_over_omega), dtype=tf.float32) - det_over_omega * ratio) * weights
+    sigma_integrand = tf.abs(tf.ones(tf.shape(det_over_omega), dtype=tf.float64) - det_over_omega * ratio) * weights
     sigma = tf.math.reduce_mean(sigma_integrand) / volume_cy
     return sigma
 
@@ -45,18 +45,18 @@ def ricci_measure(model, points, y_true, pullbacks=None, verbose=0):
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
-        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
-        y_true (tensor[(n_p,2), tf.float32]): (weights, 
+        points (tensor[(n_p,2*ncoord), tf.float64]): NN input
+        y_true (tensor[(n_p,2), tf.float64]): (weights, 
             Omega \wedge \bar(\Omega)|_p)
-        pullbacks (tensor[(n_p,nfold,ncoord), tf.complex64]): Pullback tensor
+        pullbacks (tensor[(n_p,nfold,ncoord), tf.complex128]): Pullback tensor
             Defaults to None. Then gets computed.
         verbose (int, optional): if > 0 prints some intermediate
             infos. Defaults to 0.
 
     Returns:
-        tf.float32: Ricci measure
+        tf.float64: Ricci measure
     """
-    nfold = tf.cast(model.nfold, dtype=tf.float32)
+    nfold = tf.cast(model.nfold, dtype=tf.float64)
     ncoords = model.ncoords
     weights = y_true[:, -2]
     omega = y_true[:, -1]
@@ -73,7 +73,7 @@ def ricci_measure(model, points, y_true, pullbacks=None, verbose=0):
             det = tf.math.real(tf.linalg.det(prediction)) * 1.  # factorial / (2**nfold)
             log = tf.math.log(det)
         di_dg = tape2.gradient(log, x_vars)
-    didj_dg = tf.cast(tape1.batch_jacobian(di_dg, x_vars), dtype=tf.complex64)
+    didj_dg = tf.cast(tape1.batch_jacobian(di_dg, x_vars), dtype=tf.complex128)
     # add derivatives together to complex tensor
     ricci_ij = didj_dg[:, 0:ncoords, 0:ncoords]
     ricci_ij += 1j * didj_dg[:, 0:ncoords, ncoords:]
@@ -109,15 +109,15 @@ def ricci_scalar_fn(model, points, pullbacks=None, verbose=0, rdet=True):
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
-        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
-        pullbacks (tensor[(n_p,nfold,ncoord), tf.complex64]): Pullback tensor. Defaults to None. Then gets computed.
+        points (tensor[(n_p,2*ncoord), tf.float64]): NN input
+        pullbacks (tensor[(n_p,nfold,ncoord), tf.complex128]): Pullback tensor. Defaults to None. Then gets computed.
         verbose (int, optional): if > 0 prints some intermediate infos. Defaults to 0.
         rdet (bool, optional): if True also returns det. Defaults to True.
             This is a bit hacky, because the output signature changes
             but avoids recomputing the determinant after batching.
 
     Returns:
-        tf.float32(tensor[(n_p,), tf.float32]): Ricci scalar
+        tf.float64(tensor[(n_p,), tf.float64]): Ricci scalar
     """
     ncoords = model.ncoords
     x_vars = points
@@ -132,7 +132,7 @@ def ricci_scalar_fn(model, points, pullbacks=None, verbose=0, rdet=True):
             det = tf.math.real(tf.linalg.det(prediction)) * 1.  # factorial / (2**nfold)
             log = tf.math.log(det)
         di_dg = tape2.gradient(log, x_vars)
-    didj_dg = tf.cast(tape1.batch_jacobian(di_dg, x_vars), dtype=tf.complex64)
+    didj_dg = tf.cast(tape1.batch_jacobian(di_dg, x_vars), dtype=tf.complex128)
     # add derivatives together to complex tensor
     ricci_ij = didj_dg[:, 0:ncoords, 0:ncoords]
     ricci_ij += 1j * didj_dg[:, 0:ncoords, ncoords:]
@@ -162,8 +162,8 @@ def sigma_measure_loss(model, points, omegas):
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
-        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
-        omegas (tensor[(n_p), tf.float32]): \|Omega\|^2 for the points provided
+        points (tensor[(n_p,2*ncoord), tf.float64]): NN input
+        omegas (tensor[(n_p), tf.float64]): \|Omega\|^2 for the points provided
 
     Returns:
         tf.float: sigma measure
@@ -176,10 +176,10 @@ def kaehler_measure_loss(model, points):
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
-        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
+        points (tensor[(n_p,2*ncoord), tf.float64]): NN input
 
     Returns:
-        tf.float32: Kahler loss measure
+        tf.float64: Kahler loss measure
     """
     return tf.math.reduce_mean(model.compute_kaehler_loss(points))
 
@@ -189,10 +189,10 @@ def transition_measure_loss(model, points):
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
-        points (tensor[(n_p,2*ncoord), tf.float32]): NN input
+        points (tensor[(n_p,2*ncoord), tf.float64]): NN input
 
     Returns:
-        tf.float32: Transition loss measure
+        tf.float64: Transition loss measure
     """
     return tf.math.reduce_mean(
-        model.compute_transition_loss(tf.cast(points, dtype=tf.float32)))
+        model.compute_transition_loss(tf.cast(points, dtype=tf.float64)))

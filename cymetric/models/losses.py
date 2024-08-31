@@ -18,7 +18,7 @@ def sigma_loss(kappa=1., nfold=3., flat=False):
     """
     factorial = float(1.)
     nfold = tf.cast(nfold, dtype=tf.int32)
-    kappa = tf.cast(kappa, dtype=tf.float32)
+    kappa = tf.cast(kappa, dtype=tf.float64)
     det_factor = float(1.)
 
     def to_hermitian_vec(x):
@@ -55,7 +55,7 @@ def sigma_loss(kappa=1., nfold=3., flat=False):
         # then just give it some tensor where omega is the last value.
         omega_squared = y_true[:, -1]
         det = tf.math.real(tf.linalg.det(g))*factorial/det_factor
-        return tf.abs(tf.ones(tf.shape(omega_squared), dtype=tf.float32) -
+        return tf.abs(tf.ones(tf.shape(omega_squared), dtype=tf.float64) -
                       det/omega_squared/kappa)
 
     def sigma_integrand_loss(y_true, y_pred):
@@ -73,7 +73,7 @@ def sigma_loss(kappa=1., nfold=3., flat=False):
         """
         omega_squared = y_true[:, -1]
         det = tf.math.real(tf.linalg.det(y_pred))*factorial/det_factor
-        return tf.abs(tf.ones(tf.shape(omega_squared), dtype=tf.float32) -
+        return tf.abs(tf.ones(tf.shape(omega_squared), dtype=tf.float64) -
                       det/omega_squared/kappa)
 
     if flat:
