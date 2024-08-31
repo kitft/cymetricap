@@ -955,12 +955,12 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         final_layer_init = tf.keras.initializers.Zeros if use_zero_network else tf.keras.initializers.Ones
         self.model.add(tf.keras.layers.Dense(units=1, use_bias=False, kernel_initializer=final_layer_init))
 
-        if len(self.ambient) == 1:
-            print("Using single ambient surface bihom func generator")
-            self.bihom_func = bihom_function_generatorQorT(np.array(self.ambient), len(self.ambient), self.kmoduli)
-        else:
-            print("Using multi ambient surface bihom func generator")
-            self.bihom_func = bihom_function_generator(np.array(self.ambient), len(self.ambient), self.kmoduli)
+        # if len(self.ambient) == 1:
+        #     print("Using single ambient surface bihom func generator")
+        #     self.bihom_func = bihom_function_generatorQorT(np.array(self.ambient), len(self.ambient), self.kmoduli)
+        # else:
+        #     print("Using multi ambient surface bihom func generator")
+        #     self.bihom_func = bihom_function_generator(np.array(self.ambient), len(self.ambient), self.kmoduli)
         print("no, using identity")
         self.bihom_func = self.identity
 
