@@ -1009,11 +1009,11 @@ class PointGenerator:
         points = self.generate_points(n_pw)
 
         # Throw away points for which the patch is ambiguous, since too many coordiantes are too close to 1
-        inv_one_mask = np.isclose(points, complex(1, 0))
-        bad_indices = np.where(np.sum(inv_one_mask, -1) != len(self.kmoduli))
-        point_mask = np.ones(len(points), dtype=bool)
-        point_mask[bad_indices] = False
-        points = points[point_mask]
+        #inv_one_mask = np.isclose(points, complex(1, 0))
+        #bad_indices = np.where(np.sum(inv_one_mask, -1) != len(self.kmoduli))
+        #point_mask = np.ones(len(points), dtype=bool)
+        #point_mask[bad_indices] = False
+        #points = points[point_mask]
 
         n_p = len(points)
         n_p = n_p if n_p < n_pw else n_pw
