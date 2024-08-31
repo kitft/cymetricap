@@ -909,7 +909,8 @@ def bihomogeneous_section_for_prod_not_mult(points,BASIS):
 class SquareDenseVar(tf.keras.layers.Layer):
     def __init__(self, input_dim, units, activation=tf.square, stddev=0.05, trainable=True, positive_init=True):
         super(SquareDenseVar, self).__init__()
-        w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
+        #w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
+        w_init= tfk.initializers.GlorotUniform()
         initial_value = w_init(shape=(input_dim, units), dtype='float64')
         if positive_init:
             initial_value = tf.math.abs(initial_value)
@@ -922,7 +923,8 @@ class SquareDenseVar(tf.keras.layers.Layer):
 class SquareDenseVarNoAct(tf.keras.layers.Layer):
     def __init__(self, input_dim, units, stddev=0.05, trainable=True, positive_init=True):
         super(SquareDenseVarNoAct, self).__init__()
-        w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
+        #w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
+        w_init= tfk.initializers.GlorotUniform()
         initial_value = w_init(shape=(input_dim, units), dtype='float64')
         if positive_init:
             initial_value = tf.math.abs(initial_value)
