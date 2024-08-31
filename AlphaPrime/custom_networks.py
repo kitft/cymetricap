@@ -51,11 +51,11 @@ def _fubini_study_n_potentials( points, t=tf.complex(1., 0.)):
            t (tf.complex, optional): Volume factor. Defaults to 1+0j.
 
         Returns:
-            tf.tensor([bsize], tf.float32):
+            tf.tensor([bsize], tf.float64):
                 FS-metric in the ambient space coordinates.
         """
         point_square = tf.math.reduce_sum(tf.math.abs(points)**2, axis=-1)
-        return tf.cast(t/np.pi, tf.float32) * tf.cast(tf.math.log(point_square), tf.float32)
+        return tf.cast(t/np.pi, tf.float64) * tf.cast(tf.math.log(point_square), tf.float64)
 
 def getrealandimagofprod(cpoints,return_mat=False):
     X = tf.math.real(cpoints)
@@ -245,12 +245,12 @@ class bihom_function_generator(tf.Module):
 
     @tf.function
     def __call__(self, points):
-        #k_fs = tf.zeros_like(points[:, 0], dtype=tf.float32)
-        k_fs=tf.zeros([tf.shape(points)[0]],dtype=tf.float32)
-        #kappas_prod = tf.ones_like(points[:, 0], dtype=tf.float32)
-        kappas_prod=tf.ones([tf.shape(points)[0]],dtype=tf.float32)
-        iterative_real = tf.zeros_like(points[:, 0:1], dtype=tf.float32)
-        iterative_imag = tf.zeros_like(points[:, 0:1], dtype=tf.float32)
+        #k_fs = tf.zeros_like(points[:, 0], dtype=tf.float64)
+        k_fs=tf.zeros([tf.shape(points)[0]],dtype=tf.float64)
+        #kappas_prod = tf.ones_like(points[:, 0], dtype=tf.float64)
+        kappas_prod=tf.ones([tf.shape(points)[0]],dtype=tf.float64)
+        iterative_real = tf.zeros_like(points[:, 0:1], dtype=tf.float64)
+        iterative_imag = tf.zeros_like(points[:, 0:1], dtype=tf.float64)
 
         for i in range(self.n_projective):
             #print("shaep")
@@ -717,10 +717,10 @@ def bihomogeneous_section_for_prod_not_mult(points,BASIS):
     r"""Computes the Kahler potential.
 
     Args:
-        points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+        points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
 
     Returns:
-        tf.tensor([bSize], tf.float32): Kahler potential.
+        tf.tensor([bSize], tf.float64): Kahler potential.
 
     
     """
@@ -801,7 +801,7 @@ class SquareDenseVar(tf.keras.layers.Layer):
         super(SquareDenseVar, self).__init__()
         w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
         self.w = tf.Variable(
-            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float32')) if positive_init else w_init(shape=(input_dim, units), dtype='float32'),
+            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
             trainable=trainable,
         )
         self.activation = activation 
@@ -814,9 +814,9 @@ class SquareDenseVarNoAct(tf.keras.layers.Layer):
         super(SquareDenseVarNoAct, self).__init__()
         w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
         self.w = tf.Variable(
-            #initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float32')),
-            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float32')) if positive_init else w_init(shape=(input_dim, units), dtype='float32'),
-            #initial_value=w_init(shape=(input_dim, units), dtype='float32'),
+            #initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')),
+            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
+            #initial_value=w_init(shape=(input_dim, units), dtype='float64'),
             trainable=trainable,
         )
 
