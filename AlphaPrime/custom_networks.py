@@ -185,6 +185,31 @@ class bihom_function_generator_old(tf.Module):
         sectimessecbar_over_kappa= tf.einsum('xi,x->xi',tf.concat([iterativereal,iterativeimag],axis=-1),1/kappasprod)
         return sectimessecbar_over_kappa
 
+
+class bihom_function_generatorQorT(tf.Module):
+    def __init__(self, ambient_env_var, n_projective, kmoduli):
+        super().__init__()
+        self.ambient_env_var = ambient_env_var
+        self.n_projective = n_projective
+        self.kmoduli = kmoduli
+        self.degrees = self.ambient_env_var + 1
+        self.cumsum_degrees = tf.cumsum(self.degrees)
+        
+        # Corrected slice_indices calculation
+        starts = tf.concat([[0], self.cumsum_degrees[:-1]], axis=0)
+        ends = self.cumsum_degrees
+        self.slice_indices = tf.stack([starts, ends], axis=1)
+    
+    @tf.function
+    def __call__(self, points):
+        #takes complex points
+        #k_fs = tf.zeros_like(points[:, 0], dtype=tf.float32)
+        #sqrtkappas = tf.math.sqrt(tf.reduce_sum(tf.abs(points[0:2])**2, axis=-1)*tf.reduce_sum(tf.abs(points[2:4])**2, axis=-1)*tf.reduce_sum(tf.abs(points[4:6])**2, axis=-1)*tf.reduce_sum(tf.abs(points[6:8])**2, axis=-1))
+        points0=tf.einsum('xi,x->xi',points,tf.cast(tf.reduce_sum(tf.abs(points)**2, axis=-1)**(-0.5),tf.complex64))
+        secsecbar_r,secsecbar_i=getrealandimagofprod(points0)
+        secsecbar=tf.concat((secsecbar_r,secsecbar_i),axis=1)
+        return secsecbar
+
 class bihom_function_generator(tf.Module):
     def __init__(self, ambient_env_var, n_projective, kmoduli):
         super().__init__()
@@ -277,6 +302,8 @@ class bihom_function_generator(tf.Module):
 
         sec_times_secbar_over_kappa = tf.concat([iterative_real, iterative_imag], axis=-1) / kappas_prod[:, tf.newaxis]
         return sec_times_secbar_over_kappa
+
+        
 
     @tf.function
     def _update_iterative_for_precomputing(self, iterative_real, iterative_imag, real, imag):
@@ -849,7 +876,10 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         self.nCoords=tf.reduce_sum(tf.cast(BASIS['AMBIENT'],tf.int32)+1)
         self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
         self.kmoduli=BASIS['KMODULI']
-        self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
+        if len(self.ambient)==1:
+            self.bihom_func= bihom_function_generatorQorT(np.array(self.ambient),len(self.ambient),self.kmoduli)
+        else:
+            self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
                             
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
@@ -977,7 +1007,10 @@ class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
         self.nCoords=tf.reduce_sum(tf.cast(BASIS['AMBIENT'],tf.int32)+1)
         self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
         self.kmoduli=BASIS['KMODULI']
-        self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
+        if len(self.ambient)==1:
+            self.bihom_func= bihom_function_generatorQorT(np.array(self.ambient),len(self.ambient),self.kmoduli)
+        else:
+            self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
         self.dim_output=layer_sizes[-1]
         self.constant_multiplier=constant_multiplier
                             
