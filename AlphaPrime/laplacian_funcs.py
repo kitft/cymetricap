@@ -25,33 +25,21 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
             # and dropout mix the batches, such that batch_jacobian
             # is no longer reliable.
             phi = betamodel(points,training=False)
-        d_phi = tape2.gradient(phi, points)# the derivative index is inserted at the (1) index, just after the batch index
-    dd_phi = tape1.batch_jacobian(d_phi, points) # the derivative index is inserted at the (1) index again, so now we have the structure xab
+        d_phi = tape2.gradient(phi, points)# the derivative index is inserted at the end of the index list! last index.
+    dd_phi = tape1.batch_jacobian(d_phi, points) # the derivative index is inserted at the (-1) index again
     dx_dx_phi, dx_dy_phi, dy_dx_phi, dy_dy_phi = \
-        0.25*dd_phi[:, :ncoords, :ncoords], \
-        0.25*dd_phi[:, ncoords:, :ncoords], \
-        0.25*dd_phi[:, :ncoords, ncoords:], \
+        0.25*dd_phi[:, :ncoords, :ncoords], \ #this should be dx dx, and is #
+        0.25*dd_phi[:, ncoords:, :ncoords], \ # this should  be first diff wrt y, then diff wrt x. so it's dx dy
+        0.25*dd_phi[:, :ncoords, ncoords:], \ # this should be first diff wrt x, then diff wrt y. so it's dy dx
         0.25*dd_phi[:, ncoords:, ncoords:]
     dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)# this should be d_dbar
     #this is d_dbar_phi as it's (dx-idy)(dx+idy), so +(dxdy - dy dx), assuming the above labels are correct
-
-    # this second imaginary part is a vector equation, so whilst the result is hermitian it is not necessarily real?
-    # comes from df/dz = f_x -i f_y/2. Do it twice in the correct order!
-    # the result is dy_dx_phi has the y index first, then the x index
-    # so the resuklt has the holo d index first, and the antiholo index second!!
-    #This is implemented correctly below? Hopefully
-
-    #check |z|^2 = (x+iy)(x-iy) = x^2 +y^2, d/dz dzbar is 1? Or 1/4(2+2)+i*0 = 1. So this works. First index is d/dz, second is d/dy
-    #try z^2, ddbar_ (x^2+2ixy -y^2), dz dzbar = 0, 1/4(2-2)+i1/4(2-2 = 0)
-    #factor of 2 as the laplacian CY =  2g_CY^abbar ∂_a∂_(b),
-    # note that invmetric looks like g^(b)a not g^(a)b. Actually needs a transpose. ddbar_phi has indices
-    #j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
-                    #Coordinates(s) to be eliminated in the pullbacks.
-                    #If None will take max(dQ/dz). Defaults to None.
-                    #PULLBACKS SHOULD BE GIVEN WITH THIS? Or decide I want to use none?
+    #i.e.ddphi is d_dbar_phi, which measn the FIRST index is antiholo, second index is holo
+    #as the first index is the first one to be differentiated, which is delbar
+   
     #note - this is the laplacian without a minus sign, and without the factor of 2 (i.e. it's a 'complex laplacian')
     #print("hi - fixed")
-    gdd_phi = tf.einsum('xba,xai,xij,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
+    gdd_phi = tf.einsum('xba,xai,xji,xbj->x', invmetrics,pullbacks, dd_phi, tf.math.conj(pullbacks))
     return gdd_phi
 
 
