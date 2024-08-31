@@ -1083,7 +1083,7 @@ class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
         self.kmoduli=BASIS['KMODULI']
         if len(self.ambient)==1:
             print("using single ambient surface bihom func generator")
-            self.bihom_func= bihom_function_generatorQorT(np.array(self.ambient),len(self.ambient),self.kmoduli)
+            self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
         else:
             print("using multi ambient surface bihom func generator")
             self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
