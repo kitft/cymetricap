@@ -946,15 +946,11 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         for i in range(len(layer_sizes) - 2):
             self.model.add(tf.keras.layers.Dense(
                 units=layer_sizes[i+1],
-                activation=activation,
-                kernel_initializer=tf.keras.initializers.RandomNormal(stddev=stddev)
-            ))
+                activation=activation))
         
         self.model.add(tf.keras.layers.Dense(
             units=layer_sizes[-1],
-            activation=None,
-            kernel_initializer=tf.keras.initializers.RandomNormal(stddev=stddev)
-        ))
+            activation=None))
 
         final_layer_init = tf.keras.initializers.Zeros if use_zero_network else tf.keras.initializers.Ones
         self.model.add(tf.keras.layers.Dense(units=1, use_bias=False, kernel_initializer=final_layer_init))
