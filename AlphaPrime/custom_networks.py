@@ -882,7 +882,11 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         else:
             print("using multi ambient surface bihom func generator")
             self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
-                            
+        print("no, using id")
+        self.bihom_func = self.identity
+    def identity(self, inputs):
+        return inputs
+    
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
