@@ -961,12 +961,13 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         # else:
         #     print("Using multi ambient surface bihom func generator")
         #     self.bihom_func = bihom_function_generator(np.array(self.ambient), len(self.ambient), self.kmoduli)
-        print("no, using identity")
-        self.bihom_func = self.identity
+    #     print("no, using identity")
+    #     self.bihom_func = self.identity
 
-    def identity(self, inputs):
-        return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
+    # def identity(self, inputs):
+    #     return tf.concat([tf.math.real(inputs), tf.math.imag(inputs)], axis=-1)
 
+    @tf.function
     def call(self, inputs):
         #inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         #inputs = self.bihom_func(inputs)
