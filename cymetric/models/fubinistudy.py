@@ -334,7 +334,7 @@ class FSModel(tfk.Model):
             dQdz_indices = j_elim
         full_mask = tf.cast(inv_one_mask, dtype=tf.float64)
         for i in range(self.nhyper):
-            dQdz_mask = -1.*tf.one_hot(dQdz_indices[:, i], self.ncoords)
+            dQdz_mask = -1.*tf.one_hot(dQdz_indices[:, i], self.ncoords,dtype=tf.float64)
             full_mask = tf.math.add(full_mask, dQdz_mask)
         n_p = tf.cast(tf.reduce_sum(tf.ones_like(full_mask[:, 0])), dtype=tf.int64)
         full_mask = tf.cast(full_mask, dtype=tf.bool)
@@ -405,7 +405,7 @@ class FSModel(tfk.Model):
         r"""Takes indices ([bSize,nTrue], int) and creates a faux coordinates
         mask. NOTE: the output is *not* of boolean type.
         """
-        mask = tf.one_hot(indices, depth=self.ncoords)
+        mask = tf.one_hot(indices, depth=self.ncoords,dtype=tf.float64)
         mask = tf.math.reduce_sum(mask, axis=1)
         return mask
 
@@ -514,7 +514,7 @@ class FSModel(tfk.Model):
         dQdz = self._compute_dQdz(cpoints)
         dQdz = dQdz*tf.cast(inv_one_mask, dtype=tf.complex128)
         indices = tf.argmax(tf.math.abs(dQdz), axis=-1)
-        dQdz_mask = -1.*tf.one_hot(indices, self.ncoords)
+        dQdz_mask = -1.*tf.one_hot(indices, self.ncoords,dtype=tf.float64)
         full_mask = tf.math.add(
             tf.cast(inv_one_mask, dtype=tf.float64), dQdz_mask)
         return tf.cast(full_mask, dtype=tf.bool)
@@ -667,14 +667,14 @@ class FSModel(tfk.Model):
         p2 = tf.reshape(tf.where(j_mask_red)[:, 1], (-1, self.nProjective))
 
         # g1
-        g1_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords), axis=-2)
+        g1_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords,dtype=tf.float64), axis=-2)
         g1_mask = g1_mask + i_mask_red
         g1_mask = ~tf.cast(g1_mask, dtype=tf.bool)
         g1_i = tf.where(g1_mask)
         g1_i = tf.reshape(g1_i[:, 1], (-1, self.nfold))
 
         # g2
-        g2_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords), axis=-2)
+        g2_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords,dtype=tf.float64), axis=-2)
         g2_mask = g2_mask + j_mask_red
         g2_mask = ~tf.cast(g2_mask, dtype=tf.bool)
         g2_i = tf.where(g2_mask)
