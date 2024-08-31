@@ -18,7 +18,7 @@ def get_levicivita_tensor(dim):
         dim (int): dimension
 
     Returns:
-        ndarray([dim, ..., dim], np.float32): Levi-Civita tensor.
+        ndarray([dim, ..., dim], np.float64): Levi-Civita tensor.
     """
     lc = np.zeros(tuple([dim for _ in range(dim)]))
     for t in it.permutations(range(dim), r=dim):

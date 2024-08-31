@@ -801,8 +801,8 @@ class PointGenerator:
         """
         self.BASIS = {}
         shape = np.array([np.shape(mb) for mb in self.dQdz_basis])
-        DQDZB = np.zeros((len(shape), np.max(shape[:, 0]), len(shape)), dtype=np.complex64)
-        DQDZF = np.zeros((len(shape), np.max(shape[:, 0])), dtype=np.complex64)
+        DQDZB = np.zeros((len(shape), np.max(shape[:, 0]), len(shape)), dtype=np.complex128)
+        DQDZF = np.zeros((len(shape), np.max(shape[:, 0])), dtype=np.complex128)
         for i, m in enumerate(zip(self.dQdz_basis, self.dQdz_factors)):
             DQDZB[i, 0:shape[i, 0]] += m[0]
             DQDZF[i, 0:shape[i, 0]] += m[1]
@@ -812,8 +812,8 @@ class PointGenerator:
                                for j, zi in enumerate(self.dzdz_basis)])
             DZDZB_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0]), len(shapes)), dtype=np.int64)
             DZDZB_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0]), len(shapes)), dtype=np.int64)
-            DZDZF_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0])), dtype=np.complex64)
-            DZDZF_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0])), dtype=np.complex64)
+            DZDZF_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0])), dtype=np.complex128)
+            DZDZF_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0])), dtype=np.complex128)
             for i in range(len(shapes)):
                 for j in range(len(shapes)):
                     if i != j:
