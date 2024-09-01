@@ -146,7 +146,7 @@ class GreenModel(FSModel):
                                        actual_metric_from_matrix)
         
         # Compare the pulled back matrix with special_metric
-        is_equal = tf.reduce_all(tf.math.abs(pulled_back_matrix - self.special_metric) < 1e-5)
+        is_equal = tf.reduce_all(tf.math.abs(pulled_back_matrix - self.special_metric) < 1e-4)
         tf.print("Is special_metric the pullback of final_matrix? up to 1e-4: ", is_equal)
         
         if not is_equal:

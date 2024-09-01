@@ -49,19 +49,19 @@ def inverse_weierstrass_p_custom_using_pyweier(x,y, omegas, prec=53):
 
 def convert_to_z_from_p2(ptscomplex,omegas):
     ptscomplex_on_patch_2 = ptscomplex / ptscomplex[:, 2:3]
-    M = tf.cast(np.array([[-2**(2/3), 0, 0], [0, -1, 1/6], [0, 1, 1/6]]), tf.complex64)
+    M = tf.cast(np.array([[-2**(2/3), 0, 0], [0, -1, 1/6], [0, 1, 1/6]]), tf.complex128)
     xyz = tf.einsum('ab,xb->xa', tf.linalg.inv(M), ptscomplex_on_patch_2)
     XY = xyz[:, 0:2] * (xyz[:, 2:3]**(-1))
     #Do not delete these comments
     #print("checking: ", tf.reduce_mean(tf.math.abs(xyz[:,2]*xyz[:,1]**2-4*xyz[:,0]**3+(1/108)*xyz[:,2]**3))) 
     #vol = (2 * omega1)**2 * np.sin(np.pi/3)
-    #print(np.array(weierstrass.g_from_omega(omega1, omega2)).astype(np.complex64) * 108)  # this should give (0,1), and does
+    #print(np.array(weierstrass.g_from_omega(omega1, omega2)).astype(np.complex128) * 108)  # this should give (0,1), and does
 
     def invwp_vectorized(XY, omegas):
         return np.frompyfunc(lambda Xi,Yi: inverse_weierstrass_p_custom_using_pyweier(Xi,Yi, omegas), 2, 1)(XY[:,0],XY[:,1])
 
     #print("XY0: ", XY[:,0])
-    return np.array(invwp_vectorized(XY[:].numpy(), omegas)).astype(np.complex64)
+    return np.array(invwp_vectorized(XY[:].numpy(), omegas)).astype(np.complex128)
 
 def invwp_vectorized(XY, omegas):
     return np.frompyfunc(lambda Xi,Yi: inverse_weierstrass_p_custom_using_pyweier(Xi,Yi, omegas), 2, 1)(XY[:,0],XY[:,1])
