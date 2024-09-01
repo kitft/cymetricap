@@ -1174,7 +1174,7 @@ class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
         #print("new inv")
         #return  self.layers_list[-1](inputs)/self.layers_list2[-1](inputs2)
         out=self.layers_list[-1](tf.math.log(tf.math.abs(inputs)))-self.layers_list2[-1](tf.math.log(tf.math.abs(inputs2)))
-        return self.constant_multiplier*tf.clip_by_value(out,-1e6,1e6)
+        return tf.clip_by_value(self.constant_multiplier*out,-1e6,1e6)
         #return  -self.layers_list[-1](tf.math.log(inputs))
 
 class BiholoModelFuncGENERALforSigma(tf.keras.Model):

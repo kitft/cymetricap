@@ -28,12 +28,14 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
         d_phi = tape2.gradient(phi, points)# the derivative index is inserted at the end of the index list! last index.
     dd_phi = tape1.batch_jacobian(d_phi, points) # the derivative index is inserted at the (-1) index again
     dx_dx_phi, dx_dy_phi, dy_dx_phi, dy_dy_phi = \
-        0.25*dd_phi[:, :ncoords, :ncoords], \ #this should be dx dx, and is #
-        0.25*dd_phi[:, ncoords:, :ncoords], \ # this should  be first diff wrt y, then diff wrt x. so it's dx dy
-        0.25*dd_phi[:, :ncoords, ncoords:], \ # this should be first diff wrt x, then diff wrt y. so it's dy dx
+        0.25*dd_phi[:, :ncoords, :ncoords], \
+        0.25*dd_phi[:, ncoords:, :ncoords], \
+        0.25*dd_phi[:, :ncoords, ncoords:], \
         0.25*dd_phi[:, ncoords:, ncoords:]
-    dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)# this should be d_dbar
-    #this is d_dbar_phi as it's (dx-idy)(dx+idy), so +(dxdy - dy dx), assuming the above labels are correct
+    #1 this should be dx dx, and is #
+    #2 this should  be first diff wrt y, then diff wrt x. so it's dx dy    dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)# this should be d_dbar
+    #3   this should be first diff wrt x, then diff wrt y. so it's dy dx     #this is d_dbar_phi as it's (dx-idy)(dx+idy), so +(dxdy - dy dx), assuming the above labels are correct
+
     #i.e.ddphi is d_dbar_phi, which measn the FIRST index is antiholo, second index is holo
     #as the first index is the first one to be differentiated, which is delbar
    
