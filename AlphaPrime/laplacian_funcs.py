@@ -33,9 +33,11 @@ def laplacian(betamodel,points,pullbacks,invmetrics):
         0.25*dd_phi[:, :ncoords, ncoords:], \
         0.25*dd_phi[:, ncoords:, ncoords:]
     #1 this should be dx dx, and is #
-    #2 this should  be first diff wrt y, then diff wrt x. so it's dx dy    dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)# this should be d_dbar
+    #2 this should  be first diff wrt y, then diff wrt x. so it's dx dy 
+    dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)# this should be d_dbar
     #3   this should be first diff wrt x, then diff wrt y. so it's dy dx     #this is d_dbar_phi as it's (dx-idy)(dx+idy), so +(dxdy - dy dx), assuming the above labels are correct
 
+    #####THIS IS NOW RIGHT!!!!
     #i.e.ddphi is d_dbar_phi, which measn the FIRST index is antiholo, second index is holo
     #as the first index is the first one to be differentiated, which is delbar
    
