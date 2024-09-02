@@ -684,10 +684,10 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     # sources_special_train = -1 * (1/volume_for_sources) * tf.ones_like(special_points_train[:, 0])
     # sources_special_val = -1 * (1/volume_for_sources) * tf.ones_like(special_points_val[:, 0])
 
-    sources_train = vgreens_func_torus_in_p2(X_train)
-    sources_val = vgreens_func_torus_in_p2(X_val)
-    sources_special_train = vgreens_func_torus_in_p2(special_points_train)
-    sources_special_val = vgreens_func_torus_in_p2(special_points_val)
+    sources_train = vgreens_func_torus_in_p2_with_vol_kahler(X_train)
+    sources_val = vgreens_func_torus_in_p2_with_vol_kahler(X_val)
+    sources_special_train = vgreens_func_torus_in_p2_with_vol_kahler(special_points_train)
+    sources_special_val = vgreens_func_torus_in_p2_with_vol_kahler(special_points_val)
 
  
     np.savez_compressed(os.path.join(dirname, 'dataset'),
