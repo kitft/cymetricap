@@ -1023,7 +1023,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
         realpoints = tf.Variable(realpoints, dtype=tf.float64)
         nfold = (len(cpoints[0])-2)
         if nfold==1:
-            first_decrease_checkpoint=3e-4
+            first_decrease_checkpoint=5e-1
             second_decrease_checkpoint=5e-5
 
         if nfold==3:
