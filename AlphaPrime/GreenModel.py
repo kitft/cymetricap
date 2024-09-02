@@ -712,7 +712,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
                         sources_special_val=sources_special_val,
                         final_matrix_copy=final_matrix,
                         )
-    print("print 'kappa/6'")
+    print("print 'kappa' ratio of V_J to V_Om: ", kappaover6)
     return kappaover6#point_gen.compute_kappa(points, weights, omega)
 
 

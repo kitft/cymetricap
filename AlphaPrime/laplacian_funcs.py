@@ -397,7 +397,7 @@ def HYM_measure_val_for_green(betamodel,databeta):
     # 2: vector: w*|laplacian(beta)-rho|/|sum(w.|rho|)|, where w is the point weight, rho is the source
     # 3: number: w*|laplacian(beta)-rho|)/sum(w.|rho|), where w is the point weight, rho is the source
     print("HYM measure val is currently modified to have a source of -1/3") 
-    vals=databeta['y_val'][:,0]*tf.math.abs(-2*laplacian(betamodel,databeta['X_val'],databeta['val_pullbacks'],databeta['inv_mets_val'])-(-1/3))
+    vals=databeta['y_val'][:,0]*tf.math.abs(-2*laplacian(betamodel,databeta['X_val'],databeta['val_pullbacks'],databeta['inv_mets_val'])-(-1/6))
     val=tf.reduce_mean(vals, axis=-1)
     #absolutevalsofsourcetimesweight=databeta['y_val'][:,0]*tf.math.abs(databeta['sources_val'])
     absolutevalsofsourcetimesweight=databeta['y_val'][:,0]*tf.cast(tf.math.abs(-1/3),tf.float64)
