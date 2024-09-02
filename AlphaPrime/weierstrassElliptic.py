@@ -65,3 +65,16 @@ def convert_to_z_from_p2(ptscomplex,omegas):
 
 def invwp_vectorized(XY, omegas):
     return np.frompyfunc(lambda Xi,Yi: inverse_weierstrass_p_custom_using_pyweier(Xi,Yi, omegas), 2, 1)(XY[:,0],XY[:,1])
+
+import mpmath
+
+# Compute the Green's function values
+def greens_function_torus(z, z0, omegas):
+    omega1, omega2 = omegas
+    # rebase z to the appropriate scale, which is the torus with omega1=1/2, omega2=tau/2
+    z=z/(omega1*2)#i.e. omega1 is mapped to 0.5
+    z0=z0/(omega1*2)
+    tau=omega2/omega1
+    nome=np.exp(1j*np.pi*tau)
+    theta=np.array(mpmath.jtheta(1,np.pi*(z-z0),nome)).astype(np.complex64)
+    return (-1/(2*np.pi) * np.log(np.abs(theta)) + np.imag(z-z0)**2/(2*np.imag(tau)))

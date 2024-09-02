@@ -3,6 +3,8 @@ from laplacian_funcs import *
 import tensorflow as tf
 import os
 import numpy as np
+import scipy
+from weierstrassElliptic import *
 from pympler import tracker
 
 def point_vec_to_complex(p):
@@ -658,12 +660,27 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),tf.complex128)# this cast is extraneous
     inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),tf.complex128)# this cast is extraneous
 
+    omega1 = np.sqrt(3) * scipy.special.gamma(1/3)**3 / (2 * (2**(2/3)) * np.pi)*np.exp(-1j*np.pi/6)
+    omega2 = np.exp(1j * np.pi/3) * omega1#*np.exp(-1j*np.pi/6)
+    omegas = np.array([omega1, omega2])
+
+    special_point_z = convert_to_z_from_p2(tf.expand_dims(special_point_complex,axis=0),omegas)[0]
+    vgreens_function_torus = np.vectorize(lambda z: greens_function_torus(z, special_point_z, omegas)) 
+
+    def vgreens_func_torus_in_p2(rpoints):
+        cpoints=point_vec_to_complex(rpoints)
+        zpoints=convert_to_z_from_p2(cpoints,omegas)
+        return vgreens_function_torus(zpoints)
     
-    
-    sources_train = -1 * (1/volume_for_sources) * tf.ones_like(y_train[:, 0])
-    sources_val = -1 * (1/volume_for_sources) * tf.ones_like(y_val[:, 0])
-    sources_special_train = -1 * (1/volume_for_sources) * tf.ones_like(special_points_train[:, 0])
-    sources_special_val = -1 * (1/volume_for_sources) * tf.ones_like(special_points_val[:, 0])
+    # sources_train = -1 * (1/volume_for_sources) * tf.ones_like(y_train[:, 0])
+    # sources_val = -1 * (1/volume_for_sources) * tf.ones_like(y_val[:, 0])
+    # sources_special_train = -1 * (1/volume_for_sources) * tf.ones_like(special_points_train[:, 0])
+    # sources_special_val = -1 * (1/volume_for_sources) * tf.ones_like(special_points_val[:, 0])
+
+    sources_train = vgreens_func_torus_in_p2(X_train)
+    sources_val = vgreens_func_torus_in_p2(X_val)
+    sources_special_train = vgreens_func_torus_in_p2(special_points_train)
+    sources_special_val = vgreens_func_torus_in_p2(special_points_val)
 
  
     np.savez_compressed(os.path.join(dirname, 'dataset'),
