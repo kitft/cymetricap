@@ -205,7 +205,8 @@ class GreenModel(FSModel):
         """
         #cast to real
         #-2*laplacian because this is the actual 'laplace-beltrami operator', not just gabbar del delbar
-        lpl_losses=tf.math.abs(tf.math.real(-2*laplacian(self,x,pullbacks,invmetrics))-sources)
+        #lpl_losses=tf.math.abs(tf.math.real(-2*laplacian(self,x,pullbacks,invmetrics))-sources)
+        lpl_losses=tf.math.abs(self(x)-sources)
         all_lpl_loss = lpl_losses**self.n[0]
         return all_lpl_loss
 
@@ -216,7 +217,8 @@ class GreenModel(FSModel):
         # 2: vector: w*|laplacian(beta)-rho|/|sum(w.|rho|)|, where w is the point weight, rho is the source
         # 3: number: w*|laplacian(beta)-rho|)/sum(w.|rho|), where w is the point weight, rho is the source
     
-        vals=datagreen['y_val'][:,0]*tf.math.abs(-2*laplacian(greenmodel,datagreen['X_val'],datagreen['val_pullbacks'],datagreen['inv_mets_val'])-datagreen['sources_val'])
+        #vals=datagreen['y_val'][:,0]*tf.math.abs(-2*laplacian(greenmodel,datagreen['X_val'],datagreen['val_pullbacks'],datagreen['inv_mets_val'])-datagreen['sources_val'])
+        vals=datagreen['y_val'][:,0]*tf.math.abs(greenmodel(datagreen['X_val'])-datagreen['sources_val'])
         val=tf.reduce_mean(vals, axis=-1)
         absolutevalsofsourcetimesweight=datagreen['y_val'][:,0]*tf.math.abs(datagreen['sources_val'])
         mean_ofabsolute_valofsourcetimesweight=tf.reduce_mean(absolutevalsofsourcetimesweight, axis=-1)
