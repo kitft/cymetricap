@@ -382,13 +382,28 @@ def HYM_measure_val(betamodel,databeta):
     # 2: vector: w*|laplacian(beta)-rho|/|sum(w.|rho|)|, where w is the point weight, rho is the source
     # 3: number: w*|laplacian(beta)-rho|)/sum(w.|rho|), where w is the point weight, rho is the source
     print("HYM measure val is currently modified to have a source of -1/3") 
-    vals=databeta['y_val'][:,0]*tf.math.abs(laplacian(betamodel.model,databeta['X_val'],databeta['val_pullbacks'],databeta['inv_mets_val'])-(-1/3))
+    vals=databeta['y_val'][:,0]*tf.math.abs(laplacian(betamodel,databeta['X_val'],databeta['val_pullbacks'],databeta['inv_mets_val'])-databeta['sources_val'])
     val=tf.reduce_mean(vals, axis=-1)
     #absolutevalsofsourcetimesweight=databeta['y_val'][:,0]*tf.math.abs(databeta['sources_val'])
     absolutevalsofsourcetimesweight=databeta['y_val'][:,0]*tf.cast(tf.math.abs(-1/3),tf.float64)
     mean_ofabsolute_valofsourcetimesweight=tf.reduce_mean(absolutevalsofsourcetimesweight, axis=-1)
     return val/mean_ofabsolute_valofsourcetimesweight, vals/mean_ofabsolute_valofsourcetimesweight,vals/absolutevalsofsourcetimesweight
-    
+
+
+def HYM_measure_val_for_green(betamodel,databeta):
+    #arguments: betamodel, databeta
+    #outputs: weighted by the point weights, the failure to solve the equation i.e.:
+    # 1: number: sum(w*|laplacian(beta)-rho|)/|sum(w.|rho|)|, where w is the point weight, rho is the source
+    # 2: vector: w*|laplacian(beta)-rho|/|sum(w.|rho|)|, where w is the point weight, rho is the source
+    # 3: number: w*|laplacian(beta)-rho|)/sum(w.|rho|), where w is the point weight, rho is the source
+    print("HYM measure val is currently modified to have a source of -1/3") 
+    vals=databeta['y_val'][:,0]*tf.math.abs(-2*laplacian(betamodel.model,databeta['X_val'],databeta['val_pullbacks'],databeta['inv_mets_val'])-(-1/3))
+    val=tf.reduce_mean(vals, axis=-1)
+    #absolutevalsofsourcetimesweight=databeta['y_val'][:,0]*tf.math.abs(databeta['sources_val'])
+    absolutevalsofsourcetimesweight=databeta['y_val'][:,0]*tf.cast(tf.math.abs(-1/3),tf.float64)
+    mean_ofabsolute_valofsourcetimesweight=tf.reduce_mean(absolutevalsofsourcetimesweight, axis=-1)
+    return val/mean_ofabsolute_valofsourcetimesweight, vals/mean_ofabsolute_valofsourcetimesweight,vals/absolutevalsofsourcetimesweight
+   
 # def measure_laplacian_failure(betamodel,databeta):
 
 # COME UP WITH A WAY TO DO THIS
