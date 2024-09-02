@@ -69,7 +69,8 @@ def invwp_vectorized(XY, omegas):
 import mpmath
 
 # Compute the Green's function values
-def greens_function_torus(z, z0, omegas):
+def greens_function_torus_with_vol_1over_imtau_and_domain_by_2omega(z, z0, omegas):
+    #long description, but accurate.
     omega1, omega2 = omegas
     # rebase z to the appropriate scale, which is the torus with omega1=1/2, omega2=tau/2
     z=z/(omega1*2)#i.e. omega1 is mapped to 0.5
@@ -77,4 +78,4 @@ def greens_function_torus(z, z0, omegas):
     tau=omega2/omega1
     nome=np.exp(1j*np.pi*tau)
     theta=np.array(mpmath.jtheta(1,np.pi*(z-z0),nome)).astype(np.complex64)
-    return (-1/(2*np.pi) * np.log(np.abs(theta)) + np.imag(z-z0)**2/(2*np.imag(tau)))
+    return ((-1/(2*np.pi) * np.log(np.abs(theta)) + np.imag(z-z0)**2/(2*np.imag(tau))))

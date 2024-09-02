@@ -665,13 +665,17 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     omega1 = np.sqrt(3) * scipy.special.gamma(1/3)**3 / (2 * (2**(2/3)) * np.pi)*np.exp(-1j*np.pi/6)
     omega2 = np.exp(1j * np.pi/3) * omega1#*np.exp(-1j*np.pi/6)
     omegas = np.array([omega1, omega2])
+    tau=omegas[0]/omegas[1]
 
     special_point_z = convert_to_z_from_p2(tf.expand_dims(special_point_complex,axis=0),omegas)[0]
-    vgreens_function_torus = np.vectorize(lambda z: greens_function_torus(z, special_point_z, omegas)) 
+    vgreens_function_torus = np.vectorize(lambda z: greens_function_torus_with_vol_1over_imtau_and_domain_by_2omega(z, special_point_z, omegas)) 
 
-    def vgreens_func_torus_in_p2(rpoints):
+    def vgreens_func_torus_in_p2_with_vol_kahler(rpoints):
         cpoints=point_vec_to_complex(rpoints)
         zpoints=convert_to_z_from_p2(cpoints,omegas)
+        #note that the greens funciton is automatically normalised correctly.
+        #it doens't need a multiplying factor.
+
         return vgreens_function_torus(zpoints)
     
     # sources_train = -1 * (1/volume_for_sources) * tf.ones_like(y_train[:, 0])
