@@ -5,7 +5,7 @@ import os
 import numpy as np
 import scipy
 from weierstrassElliptic import *
-from pympler import tracker
+#from pympler import tracker
 
 def point_vec_to_complex(p):
     #if len(p) == 0: 
