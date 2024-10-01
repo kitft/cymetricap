@@ -203,7 +203,7 @@ class bihom_function_generatorQorT(tf.Module):
     @tf.function
     def __call__(self, points):
         #takes complex points
-        #k_fs = tf.zeros_like(points[:, 0], dtype=tf.float32)
+        #k_fs = tf.zeros_like(points[:, 0], dtype=tf.float64)
         #sqrtkappas = tf.math.sqrt(tf.reduce_sum(tf.abs(points[0:2])**2, axis=-1)*tf.reduce_sum(tf.abs(points[2:4])**2, axis=-1)*tf.reduce_sum(tf.abs(points[4:6])**2, axis=-1)*tf.reduce_sum(tf.abs(points[6:8])**2, axis=-1))
         points0=tf.einsum('xi,x->xi',points,tf.cast(tf.reduce_sum(tf.abs(points)**2, axis=-1)**(-0.5),tf.complex128))
         secsecbar_r,secsecbar_i=getrealandimagofprod(points0)

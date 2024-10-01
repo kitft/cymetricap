@@ -3,7 +3,7 @@ from laplacian_funcs import *
 import tensorflow as tf
 import os
 import numpy as np
-from pympler import tracker
+#from pympler import tracker
 
 def point_vec_to_complex(p):
     #if len(p) == 0: 
@@ -103,9 +103,9 @@ class AlphaPrimeModel(FSModel):
         self.NLOSS = 2
         # variable or constant or just tensor?
         if alpha is not None:
-            self.alpha = [tf.Variable(a, dtype=tf.float32) for a in alpha]
+            self.alpha = [tf.Variable(a, dtype=tf.float64) for a in alpha]
         else:
-            self.alpha = [tf.Variable(1., dtype=tf.float32) for _ in range(self.NLOSS)]
+            self.alpha = [tf.Variable(1., dtype=tf.float64) for _ in range(self.NLOSS)]
         self.learn_transition = tf.cast(True, dtype=tf.bool)
         self.learn_laplacian = tf.cast(True, dtype=tf.bool)
 
@@ -115,10 +115,10 @@ class AlphaPrimeModel(FSModel):
         #self.learn_volk = tf.cast(False, dtype=tf.bool)
 
         self.custom_metrics = None
-        #self.kappa = tf.cast(BASIS['KAPPA'], dtype=tf.float32)
+        #self.kappa = tf.cast(BASIS['KAPPA'], dtype=tf.float64)
         self.gclipping = float(5.0)
         # add to compile?
-        #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float32))
+        #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float64))
         self.phimodel =phimodel
         self.alphaprime=alphaprime
         self.euler_char=euler_char    
@@ -128,10 +128,10 @@ class AlphaPrimeModel(FSModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float32): Transition loss at each point.
+            tf.tensor([bSize], tf.float64): Transition loss at each point.
         """
         inv_one_mask = self._get_inv_one_mask(points)
         patch_indices = tf.where(~inv_one_mask)[:, 1]
@@ -163,10 +163,10 @@ class AlphaPrimeModel(FSModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float32): Transition loss at each point.
+            tf.tensor([bSize], tf.float64): Transition loss at each point.
         """
         #cast to real
         lpl_losses=tf.math.abs(tf.math.real(laplacian(self.model,x,pullbacks,invmetrics))-(sources))
@@ -183,14 +183,14 @@ class AlphaPrimeModel(FSModel):
                 partial_i \bar{\partial}_j \phi_{\text{NN}}
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex64):
+            tf.tensor([bSize, nfold, nfold], tf.complex128):
                 Prediction at each point.
         """
         # nn prediction
@@ -230,14 +230,14 @@ class AlphaPrimeModel(FSModel):
                 partial_i \bar{\partial}_j \phi_{\text{NN}}
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex64):
+            tf.tensor([bSize, nfold, nfold], tf.complex128):
                 Prediction at each point.
         """
         # nn prediction
@@ -479,17 +479,17 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     
-    X_train=tf.cast(data['X_train'],tf.float32)
-    y_train=tf.cast(data['y_train'],tf.float32)
-    X_val=tf.cast(data['X_val'],tf.float32)
-    y_val=tf.cast(data['y_val'],tf.float32)
+    X_train=tf.cast(data['X_train'],tf.float64)
+    y_train=tf.cast(data['y_train'],tf.float64)
+    X_val=tf.cast(data['X_val'],tf.float64)
+    y_val=tf.cast(data['y_val'],tf.float64)
     ncoords=int(len(X_train[0])/2)
 
     #y_train=data['y_train']
     #y_val=data['y_val']
     ys=tf.concat((y_train,y_val),axis=0)
-    weights=tf.cast(tf.expand_dims(ys[:,0],axis=-1),tf.float32)
-    omega=tf.cast(tf.expand_dims(ys[:,1],axis=-1),tf.float32)
+    weights=tf.cast(tf.expand_dims(ys[:,0],axis=-1),tf.float64)
+    omega=tf.cast(tf.expand_dims(ys[:,1],axis=-1),tf.float64)
     
     realpoints=tf.concat((X_train,X_val),axis=0)
     points=tf.complex(realpoints[:,0:ncoords],realpoints[:,ncoords:])
@@ -514,8 +514,8 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
 
     #still need to generate pullbacks apparently
     pullbacks = point_gen.pullbacks(points)
-    train_pullbacks=tf.cast(pullbacks[:t_i],tf.complex64) 
-    val_pullbacks=tf.cast(pullbacks[t_i:],tf.complex64) 
+    train_pullbacks=tf.cast(pullbacks[:t_i],tf.complex128) 
+    val_pullbacks=tf.cast(pullbacks[t_i:],tf.complex128) 
 
     # points = pwo['point'][mask]
     det = tf.math.real(absdets)  # * factorial / (2**nfold)
@@ -526,17 +526,17 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     #print("hi")
     vol_k_no6 = tf.math.reduce_mean(det_over_omega * weights[:,0], axis=-1)#missing factor of 6
     #print("hi")
-    kappaover6 = tf.cast(vol_k_no6,tf.float32) / tf.cast(volume_cy,tf.float32)
+    kappaover6 = tf.cast(vol_k_no6,tf.float64) / tf.cast(volume_cy,tf.float64)
     #rint(ratio)
     #print("hi")
-    tf.cast(kappaover6,tf.float32)
+    tf.cast(kappaover6,tf.float64)
     #print("hi")
-    det = tf.cast(det,tf.float32)
+    det = tf.cast(det,tf.float64)
     print('kappa over 6 ')
     print(kappaover6) 
  
     source_computing_class= Q_compiled_function(metricModel,realpoints[0:batch_size],batch_size)    
-    Q_values,euler_all_with_sqrtg = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
+    Q_values,euler_all_with_sqrtg,Riemann_tensors = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
     #sources = euler_char/volume - Qs
     sources = euler_char/(vol_k_no6/6)-Q_values
     sources_train=sources[:t_i]
@@ -544,22 +544,37 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
 
     print("Euler_characteristic with " + str(len(euler_all_with_sqrtg)) + "points: " + str(tf.reduce_mean(euler_all_with_sqrtg)))
     print("integral of sources: " + str(tf.reduce_mean(euler_char-euler_all_with_sqrtg)))
-
-    
-    np.savez_compressed(os.path.join(dirname, 'dataset'),
-                        X_train=X_train,
-                        y_train=y_train,
-                        train_pullbacks=train_pullbacks,
-                        inv_mets_train=inv_mets_train,
-                        sources_train=sources_train,
-                        X_val=X_val,
-                        y_val=y_val,
-                        val_pullbacks=val_pullbacks,
-                        inv_mets_val=inv_mets_val,
-                        sources_val=sources_val
-                        )
+    dict=[]
+    try:
+        np.savez_compressed(os.path.join(dirname, 'dataset'),
+                            X_train=X_train,
+                            y_train=y_train,
+                            train_pullbacks=train_pullbacks,
+                            inv_mets_train=inv_mets_train,
+                            sources_train=sources_train,
+                            X_val=X_val,
+                            y_val=y_val,
+                            val_pullbacks=val_pullbacks,
+                            inv_mets_val=inv_mets_val,
+                            sources_val=sources_val,
+                            riemann_tensors=Riemann_tensors
+                            )
+    except:
+        dict= {
+            'X_train': X_train,
+            'y_train': y_train,
+            'train_pullbacks': train_pullbacks,
+            'inv_mets_train': inv_mets_train,
+            'sources_train': sources_train,
+            'X_val': X_val,
+            'y_val': y_val,
+            'val_pullbacks': val_pullbacks,
+            'inv_mets_val': inv_mets_val,
+            'sources_val': sources_val,
+            'riemann_tensors':Riemann_tensors
+        }
     print("print 'kappa/6'")
-    return kappaover6#point_gen.compute_kappa(points, weights, omega)
+    return [dict,Riemann_tensors]#point_gen.compute_kappa(points, weights, omega)
 
 
 def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, batch_sizes=[64, 10000],
@@ -688,15 +703,15 @@ class Q_compiled_function(tf.Module):
         print("compiling")
         self.compute_christoffel_symbols_holo_not_pb = tf.function( 
             self.compute_christoffel_symbols_holo_not_pb_uncomp,
-            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float32),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float64),)
         )
         self.compute_riemann_m_nb_rb_sbUP = tf.function( 
             self.compute_riemann_m_nb_rb_sbUP_uncomp,
-            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float32),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float64),)
         )
         self.compute_Q = tf.function( 
             self.compute_Q_uncomp,
-            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float32),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float64),)
         )
         print("compiled")
         #Now compile the various bits
@@ -714,9 +729,9 @@ class Q_compiled_function(tf.Module):
             Ig=tf.math.imag(g)
         #with tapeC.stop_recording():
         print('christoffel tape1')
-        dXreal_dRg= tf.cast(tapeC.batch_jacobian(Rg, x_vars),dtype=tf.complex64)
+        dXreal_dRg= tf.cast(tapeC.batch_jacobian(Rg, x_vars),dtype=tf.complex128)
         print('christoffel tape2')
-        dXreal_dIg = tf.cast(tapeC.batch_jacobian(Ig, x_vars),dtype=tf.complex64)
+        dXreal_dIg = tf.cast(tapeC.batch_jacobian(Ig, x_vars),dtype=tf.complex128)
         del tapeC
         print('del christoffel tape')
         inverseg=tf.linalg.inv(g)#this has indices inverse of a bbar = bbar a
@@ -759,9 +774,9 @@ class Q_compiled_function(tf.Module):
         #with tapeR.stop_recording():
         print('only runs during compilation')
         print('first gradienttape')
-        RdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(RgammaantiholoK_AN, x_vars),dtype=tf.complex64)
+        RdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(RgammaantiholoK_AN, x_vars),dtype=tf.complex128)
         print('second gradienttape')
-        IdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(IgammaantiholoK_AN, x_vars),dtype=tf.complex64)
+        IdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(IgammaantiholoK_AN, x_vars),dtype=tf.complex128)
         del tapeR
         print('tapes deleted')
 
@@ -786,7 +801,7 @@ class Q_compiled_function(tf.Module):
         R_m_nUP_r_sUP = -1*tf.math.conj(tf.einsum('xam,xmnrs->xnars',ginverse,R_m_nb_rb_sbUP))
         term1 = tf.einsum('xabcd,xcdef,xefab->x', R_m_nb_rUP_sbarUP, R_m_nb_rUP_sbarUP, R_m_nb_rUP_sbarUP)
         term2=tf.einsum('xacbd,xcedf,xeafb->x',R_m_nUP_r_sUP,R_m_nUP_r_sUP,R_m_nUP_r_sUP)
-        return -8/(3*(2*np.pi)**3)*(term1-term2)#,1/(3*(2*np.pi)**3)*(term1),1/(3*(2*np.pi)**3)*(term2)
+        return -8/(3*(2*np.pi)**3)*(term1-term2),R_m_nb_rb_sbUP#,1/(3*(2*np.pi)**3)*(term1),1/(3*(2*np.pi)**3)*(term2)
         #added minus sign so answer is -128
         #THIS MAY BE WRONG
     # added the factor of 8 back in
@@ -820,7 +835,8 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
     total_length = tf.shape(input_vector)[0]
     num_batches = (total_length + batch_size - 1) // batch_size
 
-    result_array = tf.TensorArray(tf.float32, size=num_batches)
+    result_Q_array = tf.TensorArray(tf.float64, size=num_batches)
+    result_R_array = tf.TensorArray(tf.complex128, size=num_batches)
     euler_sum = tf.constant(0.0)
     weight_sum = tf.constant(0.0)
 
@@ -835,8 +851,10 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
             repeat_times = tf.cast(tf.math.ceil(batch_size / current_batch_size), tf.int32)
             batch=tf.tile(batch, [repeat_times,1])[0:batch_size]
 
-        result = tf.math.real(compute_Q(batch))
-        result_array = result_array.write(i, result)
+        result_Q, result_R = compute_Q(batch)
+        result = tf.math.real(result_Q)
+        result_Q_array = result_Q_array.write(i, result)
+        result_R_array = result_R_array.write(i, result_R)
 
         batch_weights = weights[start:end]
         number_of_points=tf.shape(batch_weights)[0]#can be different to batch_size on laast iteration
@@ -850,10 +868,12 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
         tf.print("in", end, "euler:", euler_sum / float(min((i+1)*batch_size,total_length)), "vol", weight_sum/float(min((i+1)*batch_size,total_length)))
 
     #stack, concatenate and fix length issue, also cast to real as it should be/is real
-    resultarr2 = tf.math.real(result_array.stack())
-    resultarr2=tf.reshape(resultarr2,[-1])[:total_length]
+    resultarr2 = tf.math.real(result_Q_array.stack())
+    resultarr2 = tf.reshape(resultarr2, [-1])[:total_length]
 
+    result_R_stacked = result_R_array.stack()
+    result_R_stacked = tf.reshape(result_R_stacked, [-1])[:total_length]
 
     euler_all = weights[:total_length] * resultarr2
 
-    return resultarr2, euler_all
+    return resultarr2, euler_all, result_R_stacked

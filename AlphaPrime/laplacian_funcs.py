@@ -206,7 +206,7 @@ def coclosure_check(points,HYMmetric,harmonicform_jbar,sigma,invmetric,pullbacks
         tape1.watch(pointstensor)
         cpoints=point_vec_to_complex(pointstensor)
         dbarsigma = extder_jbar_for_sigma(pointstensor,sigma)
-        HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex64),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex64)) + dbarsigma,tf.complex64))#complexpoints vs noncomplex
+        HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex128),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex128)) + dbarsigma,tf.complex128))#complexpoints vs noncomplex
         real_part = tf.math.real(HNu)
         imag_part = tf.math.imag(HNu)
 
@@ -240,7 +240,7 @@ def extder_jbar_for_sigma(points,sigma):
     with tf.GradientTape(persistent=True) as tape2:
         tape2.watch(pointstensor)
         #cpoints=point_vec_to_complex(pointstensor)
-        #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex64),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex64)),tf.complex64))#complexpoints vs noncomplex
+        #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex128),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex128)),tf.complex128))#complexpoints vs noncomplex
         sigma = sigma(pointstensor)
         real_part = tf.math.real(sigma)
         imag_part = tf.math.imag(sigma)
@@ -262,7 +262,7 @@ def extder_j_for_sigma(points,sigma):
     with tf.GradientTape(persistent=True) as tape2:
         tape2.watch(pointstensor)
         #cpoints=point_vec_to_complex(pointstensor)
-        #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex64),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex64)),tf.complex64))#complexpoints vs noncomplex
+        #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex128),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex128)),tf.complex128))#complexpoints vs noncomplex
         sigma = sigma(pointstensor)
         real_part = tf.math.real(sigma)
         imag_part = tf.math.imag(sigma)
@@ -286,7 +286,7 @@ def extder_j_for_sigma(points,sigma):
 #     with tf.GradientTape(persistent=True) as tape1:
 #         tape1.watch(pointstensor)
 #         cpoints=point_vec_to_complex(pointstensor)
-#         HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex64),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex64)),tf.complex64))#complexpoints vs noncomplex
+#         HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex128),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex128)),tf.complex128))#complexpoints vs noncomplex
 #         #print("updated to fix! 5th dec")
 #         #print(np.shape(HNu))
 #         dHnu = tape1.batch_jacobian(HNu, pointstensor)
@@ -309,7 +309,7 @@ def antiholo_extder_for_nu_w_dzbar(points,nu):
     with tf.GradientTape(persistent=True) as tape2:
         tape2.watch(pointstensor)
         cpoints=point_vec_to_complex(pointstensor)
-        #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex64),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex64)),tf.complex64))#complexpoints vs noncomplex
+        #HNu=tf.einsum('x,xb->xb',tf.cast(HYMmetric(pointstensor),tf.complex128),tf.cast(harmonicform_jbar(tf.cast(cpoints,tf.complex128)),tf.complex128))#complexpoints vs noncomplex
         nujbar = nu(pointstensor)
         real_part = tf.math.real(nujbar)
         imag_part = tf.math.imag(nujbar)
@@ -330,10 +330,10 @@ def antiholo_extder_for_nu_w_dzbar(points,nu):
 def compute_transition_pointwise_measure(functionmodel, points):
         r"""Computes transition loss at each point for a function!
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float32): Transition loss at each point.
+            tf.tensor([bSize], tf.float64): Transition loss at each point.
         """
         inv_one_mask = functionmodel._get_inv_one_mask(points)
         patch_indices = tf.where(~inv_one_mask)[:, 1]
@@ -423,7 +423,7 @@ def HYM_measure_val_for_green(betamodel,databeta):
 def HYM_measure_val_with_H(HFmodel,dataHF):
     #returns ratio means of deldagger V_corrected/deldagger V_FS
     #and returns
-    pts = tf.cast(dataHF['X_val'],tf.float32)
+    pts = tf.cast(dataHF['X_val'],tf.float64)
     # compute the laplacian (withH) acting on the HFmodel
     laplacianvals=laplacianWithH(HFmodel,pts,dataHF['val_pullbacks'],dataHF['inv_mets_val'],HFmodel.HYMmetric)
     coclosuretrained=coclosure_check(pts,HFmodel.HYMmetric,HFmodel.functionforbaseharmonicform_jbar,HFmodel,dataHF['inv_mets_val'],dataHF['val_pullbacks'])
@@ -441,10 +441,10 @@ def compute_transition_pointwise_measure_section(HFmodel, points):
         also can separately check that the 1-form itHFmodel transforms appropriately?
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float32): Transition loss at each point.
+            tf.tensor([bSize], tf.float64): Transition loss at each point.
         """
         inv_one_mask = HFmodel._get_inv_one_mask(points)
         patch_indices = tf.where(~inv_one_mask)[:, 1]
@@ -497,10 +497,10 @@ def compute_transition_loss_for_uncorrected_HF_model(HFmodel, points):
             ||g^k - T_{jk} \cdot g^j T^\dagger_{jk}||_n
 
     Args:
-        points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+        points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
 
     Returns:
-        tf.tensor([bSize], tf.float32): Transition loss at each point.
+        tf.tensor([bSize], tf.float64): Transition loss at each point.
     """
     inv_one_mask = HFmodel._get_inv_one_mask(points)
     patch_indices = tf.where(~inv_one_mask)[:, 1]
