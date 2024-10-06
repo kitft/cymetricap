@@ -873,8 +873,8 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
                             for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
         self.layers_list += [tfk.layers.Dense(units=layer_sizes[len(layer_sizes)-1],activation=None)]
         ##i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
-        final_layer_inits=tf.keras.initializers.Ones if (not use_zero_network) else tf.keras.initializers.Zeros
-        self.layers_list+=[tf.keras.layers.Dense(units=1, use_bias=False,kernel_initializer=final_layer_inits)]# add the extra free parameter after the log
+        #final_layer_inits=tf.keras.initializers.Ones if (not use_zero_network) else tf.keras.initializers.Zeros
+        self.layers_list += [tf.keras.layers.Dense(units=1, use_bias=False, kernel_initializer='zeros' if use_zero_network else 'glorot_uniform')]  # add the extra free parameter after the log, initialized with zeros if use_zero_network is true
         self.BASIS=BASIS
         self.nCoords=tf.reduce_sum(tf.cast(BASIS['AMBIENT'],tf.int32)+1)
         self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
