@@ -896,7 +896,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         #print("ncCoords" +  str(self.nCoords))
         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
-        inputs =self.bihom_func(inputs)
+        #inputs =self.bihom_func(inputs)
         #print(tf.shape(inputs))
         #print(tf.shape(inputs))
         #return tf.math.log(tf.reduce_sum(inputs,axis=-1))
