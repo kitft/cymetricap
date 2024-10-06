@@ -15,3 +15,4 @@ def set_double_precision(use_double):
 
     # Optional: Set TensorFlow's default float type as well
     tf.keras.backend.set_floatx('float64' if use_double else 'float32')
+    tf.keras.mixed_precision.set_global_policy('float64' if use_double else 'float32')
