@@ -3,6 +3,7 @@ import tensorflow as tf
 import scipy
 import sklearn
 from pyweierstrass import weierstrass
+from cymetric.config import real_dtype, complex_dtype
 
 
 def to_fundamental_domain(z, fullperiods):
@@ -49,7 +50,7 @@ def inverse_weierstrass_p_custom_using_pyweier(x,y, omegas, prec=53):
 
 def convert_to_z_from_p2(ptscomplex,omegas):
     ptscomplex_on_patch_2 = ptscomplex / ptscomplex[:, 2:3]
-    M = tf.cast(np.array([[-2**(2/3), 0, 0], [0, -1, 1/6], [0, 1, 1/6]]), tf.complex128)
+    M = tf.cast(np.array([[-2**(2/3), 0, 0], [0, -1, 1/6], [0, 1, 1/6]]), complex_dtype)
     xyz = tf.einsum('ab,xb->xa', tf.linalg.inv(M), ptscomplex_on_patch_2)
     XY = xyz[:, 0:2] * (xyz[:, 2:3]**(-1))
     #Do not delete these comments

@@ -1,4 +1,6 @@
 import tensorflow as tf
+from cymetric.config import real_dtype, complex_dtype
+
 
 def convertcomptoreal(complexvec):
     # this converts from complex to real

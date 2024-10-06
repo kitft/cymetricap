@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow.keras as tfk
+from cymetric.config import real_dtype, complex_dtype
+
 #def make_nn(n_in,n_out,nlayer,nHidden,act='gelu',lastbias=False,use_zero_network=False):
 #   if use_zero_network:
 #      nn_phi = tf.keras.Sequential()

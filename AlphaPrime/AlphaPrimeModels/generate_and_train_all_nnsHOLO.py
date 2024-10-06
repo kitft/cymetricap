@@ -12,6 +12,8 @@ from cymetric.models.tfmodels import PhiFSModel, MultFSModel, FreeModel, MatrixF
 from cymetric.models.tfhelper import prepare_tf_basis, train_model
 from cymetric.models.callbacks import SigmaCallback, KaehlerCallback, TransitionCallback, RicciCallback, VolkCallback, AlphaCallback
 from cymetric.models.metrics import SigmaLoss, KaehlerLoss, TransitionLoss, RicciLoss, VolkLoss, TotalLoss
+from cymetric.config import real_dtype, complex_dtype
+
 
 import os
 import numpy as np

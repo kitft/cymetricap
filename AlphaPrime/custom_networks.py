@@ -1,6 +1,15 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow.keras as tfk
+from cymetric.config import real_dtype, complex_dtype
+
+
+# Define string version of real_dtype
+if real_dtype == tf.float32:
+    real_dtype_str = 'float32'
+else:
+    real_dtype_str = 'float64'
+
 #def make_nn(n_in,n_out,nlayer,nHidden,act='gelu',lastbias=False,use_zero_network=False):
 #   if use_zero_network:
 #      nn_phi = tf.keras.Sequential()
@@ -46,16 +55,16 @@ def _fubini_study_n_potentials( points, t=tf.complex(1., 0.)):
         ambient space factor specified by n.
 
         Args:
-            points (tf.tensor([bSize, ncoords], tf.complex128)): Coordinates of
+            points (tf.tensor([bSize, ncoords], complex_dtype)): Coordinates of
                 the n-th projective spce.
            t (tf.complex, optional): Volume factor. Defaults to 1+0j.
 
         Returns:
-            tf.tensor([bsize], tf.float64):
+            tf.tensor([bsize], real_dtype):
                 FS-metric in the ambient space coordinates.
         """
         point_square = tf.math.reduce_sum(tf.math.abs(points)**2, axis=-1)
-        return tf.cast(t/np.pi, tf.float64) * tf.cast(tf.math.log(point_square), tf.float64)
+        return tf.cast(t/np.pi, real_dtype) * tf.cast(tf.math.log(point_square), real_dtype)
 
 def getrealandimagofprod(cpoints,return_mat=False):
     X = tf.math.real(cpoints)
@@ -123,7 +132,7 @@ class bihom_function_generator_old(tf.Module):
         k_fs = _fubini_study_n_potentials(cpoints, t=self.kmoduli[0])
         #print("here")
         #cpoints_stored=[cpoints]
-        #cpoints_stored=tf.TensorArray(tf.complex128,size=nProjective)
+        #cpoints_stored=tf.TensorArray(complex_dtype,size=nProjective)
         #cpoints_stored=cpoints_stored.write(0,cpoints)
         kappasprod=kappas
         #print('degs '+ str(degrees))
@@ -203,9 +212,9 @@ class bihom_function_generatorQorT(tf.Module):
     @tf.function
     def __call__(self, points):
         #takes complex points
-        #k_fs = tf.zeros_like(points[:, 0], dtype=tf.float64)
+        #k_fs = tf.zeros_like(points[:, 0], dtype=real_dtype)
         #sqrtkappas = tf.math.sqrt(tf.reduce_sum(tf.abs(points[0:2])**2, axis=-1)*tf.reduce_sum(tf.abs(points[2:4])**2, axis=-1)*tf.reduce_sum(tf.abs(points[4:6])**2, axis=-1)*tf.reduce_sum(tf.abs(points[6:8])**2, axis=-1))
-        points0=tf.einsum('xi,x->xi',points,tf.cast(tf.reduce_sum(tf.abs(points)**2, axis=-1)**(-0.5),tf.complex128))
+        points0=tf.einsum('xi,x->xi',points,tf.cast(tf.reduce_sum(tf.abs(points)**2, axis=-1)**(-0.5),complex_dtype))
         secsecbar_r,secsecbar_i=getrealandimagofprod(points0)
         secsecbar=tf.concat((secsecbar_r,secsecbar_i),axis=1)
         return secsecbar
@@ -270,12 +279,12 @@ class bihom_function_generator(tf.Module):
 
     @tf.function
     def __call__(self, points):
-        #k_fs = tf.zeros_like(points[:, 0], dtype=tf.float64)
-        k_fs=tf.zeros([tf.shape(points)[0]],dtype=tf.float64)
-        #kappas_prod = tf.ones_like(points[:, 0], dtype=tf.float64)
-        kappas_prod=tf.ones([tf.shape(points)[0]],dtype=tf.float64)
-        iterative_real = tf.zeros_like(points[:, 0:1], dtype=tf.float64)
-        iterative_imag = tf.zeros_like(points[:, 0:1], dtype=tf.float64)
+        #k_fs = tf.zeros_like(points[:, 0], dtype=real_dtype)
+        k_fs=tf.zeros([tf.shape(points)[0]],dtype=real_dtype)
+        #kappas_prod = tf.ones_like(points[:, 0], dtype=real_dtype)
+        kappas_prod=tf.ones([tf.shape(points)[0]],dtype=real_dtype)
+        iterative_real = tf.zeros_like(points[:, 0:1], dtype=real_dtype)
+        iterative_imag = tf.zeros_like(points[:, 0:1], dtype=real_dtype)
 
         for i in range(self.n_projective):
             #print("shaep")
@@ -450,7 +459,7 @@ def empty_gather_on_last_axis(points, indices):
 #     #print(reshaped_indices)
 #     gathered_pts= empty_gather_on_last_axis(cpoints, reshaped_indices)#,axis=-1)
 #     #print(gathered_pts.shape)
-#     matrixNby1ofOnes=tf.cast(tf.ones_like(cpoints[:,0:1]),tf.complex128)
+#     matrixNby1ofOnes=tf.cast(tf.ones_like(cpoints[:,0:1]),complex_dtype)
 #     onescomplex=tf.expand_dims(tf.repeat(matrixNby1ofOnes,tf.shape(gathered_pts)[-1],axis=1),axis=1)
 #     #onescomplex=tf.expand_dims(tf.repeat(matrixNby1ofOnes,tf.shape(reshaped_indices)[0],axis=1),axis=-1)
 #     #print(onescomplex.shape)
@@ -532,7 +541,7 @@ class get_degree_kphiandMmonomials_general(tf.Module):
             #indsk=get_monomial_indices(cpoints[0,0:2],kphi[i])#conj is unnecessary here
             s = self.slice_indices[i,0]
             e= self.slice_indices[i,1]
-            kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,s:e])**2,axis=-1),tf.complex128)
+            kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,s:e])**2,axis=-1),complex_dtype)
             if self.linebundleindices[i]>=0:
                 #kappa_i_kphi=kappa_i**self.kphi[i]
                 #monsbar=monomialsWithMeta(kphi[i],tf.math.conj(cpoints[:,2*i:2*i+2]),indsk)
@@ -556,7 +565,7 @@ class get_degree_kphiandMmonomials_general(tf.Module):
                 monsbar=monomialsWithMeta(tf.math.conj(cpoints[:,s:e]),indskpModM)
                 #print(monsbar)
                 #print(mons)
-                kappa_i_kphiplusmodM=kappa_i**tf.cast((self.kphi[i]+tf.math.abs(self.linebundleindices[i])),tf.complex128)
+                kappa_i_kphiplusmodM=kappa_i**tf.cast((self.kphi[i]+tf.math.abs(self.linebundleindices[i])),complex_dtype)
                 outer_prod_of_mons_and_monsbar=tf.einsum('xi,xj,x->xij',mons,monsbar,1/kappa_i_kphiplusmodM)
                 #tf.reshape(outer_prod_of_mons_and_monsbar,(-1,tf.shape(outer_prod_of_mons_and_monsbar)[-1]))
                 #tf.print('test')
@@ -585,7 +594,7 @@ def get_degree_kphiandMmonomials_func(kphi,linebundleindices,indslist,cpoints):
             #indskpModM=get_monomial_indices(cpoints[0,0:2],kphi[i]+tf.math.abs(linebundleindices[i]))
             #indsk=get_monomial_indices(cpoints[0,0:2],kphi[i])#conj is unnecessary here
 
-            kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,2*i:2*i+2])**2,axis=-1),tf.complex128)
+            kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,2*i:2*i+2])**2,axis=-1),complex_dtype)
             if linebundleindices[i]>=0:
                 #kappa_i_kphi=kappa_i**kphi[i]
                 #monsbar=monomialsWithMeta(kphi[i],tf.math.conj(cpoints[:,2*i:2*i+2]),indsk)
@@ -606,7 +615,7 @@ def get_degree_kphiandMmonomials_func(kphi,linebundleindices,indslist,cpoints):
                 monsbar=monomialsWithMeta(tf.math.conj(cpoints[:,2*i:2*i+2]),indskpModM)
                 #print(monsbar)
                 #print(mons)
-                kappa_i_kphiplusmodM=kappa_i**tf.cast((kphi[i]+tf.math.abs(linebundleindices[i])),tf.complex128)
+                kappa_i_kphiplusmodM=kappa_i**tf.cast((kphi[i]+tf.math.abs(linebundleindices[i])),complex_dtype)
                 outer_prod_of_mons_and_monsbar=tf.einsum('xi,xj,x->xij',mons,monsbar,1/kappa_i_kphiplusmodM)
                 #tf.reshape(outer_prod_of_mons_and_monsbar,(-1,tf.shape(outer_prod_of_mons_and_monsbar)[-1]))
                 #tf.print('test')
@@ -634,7 +643,7 @@ def get_degree_kphiandMmonomials_func(kphi,linebundleindices,indslist,cpoints):
 #         #indskpModM=get_monomial_indices(cpoints[0,0:2],kphi[i]+tf.math.abs(linebundleindices[i]))
 #         #indsk=get_monomial_indices(cpoints[0,0:2],kphi[i])#conj is unnecessary here
 
-#         kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,2*i:2*i+2])**2,axis=-1),tf.complex128)
+#         kappa_i=tf.cast(tf.reduce_sum(tf.math.abs(cpoints[:,2*i:2*i+2])**2,axis=-1),complex_dtype)
 #         if linebundleindices[i]>=0:
 #             kappa_i_kphi=kappa_i**kphi[i]
 #             #monsbar=monomialsWithMeta(kphi[i],tf.math.conj(cpoints[:,2*i:2*i+2]),indsk)
@@ -652,7 +661,7 @@ def get_degree_kphiandMmonomials_func(kphi,linebundleindices,indslist,cpoints):
 #             monsbar=monomialsWithMeta(tf.math.conj(cpoints[:,2*i:2*i+2]),indskpModM)
 #             #print(monsbar)
 #             #print(mons)
-#             kappa_i_kphiplusmodM=kappa_i**tf.cast((kphi[i]+tf.math.abs(linebundleindices[i])),tf.complex128)
+#             kappa_i_kphiplusmodM=kappa_i**tf.cast((kphi[i]+tf.math.abs(linebundleindices[i])),complex_dtype)
 #             outer_prod_of_mons_and_monsbar=tf.einsum('xi,xj,x->xij',mons,monsbar,1/kappa_i_kphiplusmodM)
 #             #tf.reshape(outer_prod_of_mons_and_monsbar,(-1,tf.shape(outer_prod_of_mons_and_monsbar)[-1]))
 #             outerresult=tf.reshape(outer_prod_of_mons_and_monsbar,(-1,tf.shape(outer_prod_of_mons_and_monsbar)[-1]*tf.shape(outer_prod_of_mons_and_monsbar)[-2]))
@@ -749,10 +758,10 @@ def bihomogeneous_section_for_prod_not_mult(points,BASIS):
     r"""Computes the Kahler potential.
 
     Args:
-        points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+        points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
     Returns:
-        tf.tensor([bSize], tf.float64): Kahler potential.
+        tf.tensor([bSize], real_dtype): Kahler potential.
 
     
     """
@@ -833,7 +842,7 @@ class SquareDenseVar(tf.keras.layers.Layer):
         super(SquareDenseVar, self).__init__()
         w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
         self.w = tf.Variable(
-            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
+            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype=real_dtype_str)) if positive_init else w_init(shape=(input_dim, units), dtype=real_dtype_str),
             trainable=trainable,
         )
         self.activation = activation 
@@ -846,9 +855,9 @@ class SquareDenseVarNoAct(tf.keras.layers.Layer):
         super(SquareDenseVarNoAct, self).__init__()
         w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
         self.w = tf.Variable(
-            #initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')),
-            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype='float64')) if positive_init else w_init(shape=(input_dim, units), dtype='float64'),
-            #initial_value=w_init(shape=(input_dim, units), dtype='float64'),
+            #initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype=real_dtype_str)),
+            initial_value=tf.math.abs(w_init(shape=(input_dim, units), dtype=real_dtype_str)) if positive_init else w_init(shape=(input_dim, units), dtype=real_dtype_str),
+            #initial_value=w_init(shape=(input_dim, units), dtype=real_dtype_str),
             trainable=trainable,
         )
     @tf.function
@@ -889,7 +898,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
     @tf.function# is this the problem???
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         #print("ncCoords" +  str(self.nCoords))
         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
@@ -911,7 +920,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
 #         super(SquareDenseVar, self).__init__()
 #         #w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
 #         w_init= tfk.initializers.GlorotUniform()
-#         initial_value = w_init(shape=(input_dim, units), dtype='float64')
+#         initial_value = w_init(shape=(input_dim, units), dtype=real_dtype_str)
 #         if positive_init:
 #             initial_value = tf.math.abs(initial_value)
 #         self.w = tf.Variable(initial_value, trainable=trainable)
@@ -925,7 +934,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
 #         super(SquareDenseVarNoAct, self).__init__()
 #         #w_init = tf.random_normal_initializer(mean=0.0, stddev=stddev)
 #         w_init= tfk.initializers.GlorotUniform()
-#         initial_value = w_init(shape=(input_dim, units), dtype='float64')
+#         initial_value = w_init(shape=(input_dim, units), dtype=real_dtype_str)
 #         if positive_init:
 #             initial_value = tf.math.abs(initial_value)
 #         self.w = tf.Variable(initial_value, trainable=trainable)
@@ -991,7 +1000,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
                             
 #     def call(self, inputs):
 #         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-#         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+#         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
 #         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
 #         #print("ncCoords" +  str(self.nCoords))
 #         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
@@ -1029,7 +1038,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
                             
 #     def call(self, inputs):
 #         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-#         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+#         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
 #         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
 #         #print("ncCoords" +  str(self.nCoords))
 #         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
@@ -1087,7 +1096,7 @@ class BiholoModelFuncforMetric(tf.keras.Model):
                             
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         #print("ncCoords" +  str(self.nCoords))
         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
@@ -1152,7 +1161,7 @@ class BiholoModelFuncGENERALforHYMinv3(tf.keras.Model):
                             
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         #print("ncCoords" +  str(self.nCoords))
         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
@@ -1221,12 +1230,12 @@ class BiholoModelFuncGENERALforSigma(tf.keras.Model):
         self.kmoduli=BASIS['KMODULI']
         self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
         self.get_deg_kphi_and_mons_class=get_degree_kphiandMmonomials(k_phi,linebundleindices,self.indslist)
-        self.get_deg_kphi_and_mons=tf.function(self.get_deg_kphi_and_mons_class.__call__,input_signature=(tf.TensorSpec(shape=[None,self.nCoords], dtype=tf.complex128),))
+        self.get_deg_kphi_and_mons=tf.function(self.get_deg_kphi_and_mons_class.__call__,input_signature=(tf.TensorSpec(shape=[None,self.nCoords], dtype=complex_dtype),))
         #self.get_deg_kphi_and_mons_func=lambda x: get_degree_kphiandMmonomials_func(k_phi,linebundleindices,self.indslist,x)
 
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         #print("ncCoords" +  str(self.nCoords))
         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
@@ -1276,7 +1285,7 @@ class BiholoModelFuncGENERALforSigma(tf.keras.Model):
                             
 #     def call(self, inputs):
 #         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-#         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+#         #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
 #         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
 #         #print("ncCoords" +  str(self.nCoords))
 #         #norm=tf.math.abs(tf.norm(inputs,axis=-1))
@@ -1316,7 +1325,7 @@ class BiholoModelFuncGENERALnolog(tf.keras.Model):
                             
     def call(self, inputs):
         #sum_coords=(tf.reduce_sum(inputs,axis=-1))
-        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),tf.complex128))
+        #norm_factor_phase=np.e**((1.j)*tf.cast(tf.math.atan2(tf.math.imag(sum_coords),tf.math.real(sum_coords)),complex_dtype))
         inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
         #print("ncCoords" +  str(self.nCoords))
         #norm=tf.math.abs(tf.norm(inputs,axis=-1))

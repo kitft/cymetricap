@@ -5,6 +5,7 @@ import os
 import numpy as np
 import scipy
 from weierstrassElliptic import *
+from cymetric.config import real_dtype, complex_dtype
 #from pympler import tracker
 
 def point_vec_to_complex(p):
@@ -105,9 +106,9 @@ class GreenModel(FSModel):
         self.NLOSS = 3
         # variable or constant or just tensor?
         if alpha is not None:
-            self.alpha = [tf.Variable(a, dtype=tf.float64) for a in alpha]
+            self.alpha = [tf.Variable(a, dtype=real_dtype) for a in alpha]
         else:
-            self.alpha = [tf.Variable(1., dtype=tf.float64) for _ in range(self.NLOSS)]
+            self.alpha = [tf.Variable(1., dtype=real_dtype) for _ in range(self.NLOSS)]
         self.learn_transition = tf.cast(True, dtype=tf.bool)
         self.learn_laplacian = tf.cast(True, dtype=tf.bool)
         self.learn_special_laplacian = tf.cast(True, dtype=tf.bool)
@@ -118,15 +119,15 @@ class GreenModel(FSModel):
         #self.learn_volk = tf.cast(False, dtype=tf.bool)
 
         self.custom_metrics = None
-        #self.kappa = tf.cast(BASIS['KAPPA'], dtype=tf.float64)
+        #self.kappa = tf.cast(BASIS['KAPPA'], dtype=real_dtype)
         self.gclipping = float(5.0)
         # add to compile?
-        #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float64))
+        #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=real_dtype))
         self.metricModel =metricModel
         self.sigmoid_for_nn = lambda x: sigmoid_like_function(x, transition_point=0.1, steepness=2)
 
         self.special_point=special_point
-        self.special_pullback=tf.cast(self.pullbacks((tf.expand_dims(special_point,axis=0)))[0],dtype=tf.complex128)#self.pullbacks takes real arguments
+        self.special_pullback=tf.cast(self.pullbacks((tf.expand_dims(special_point,axis=0)))[0],dtype=complex_dtype)#self.pullbacks takes real arguments
         self.special_metric=self.metricModel(tf.expand_dims(special_point,axis=0))[0]
         self.final_matrix=final_matrix
         # Check if special_metric is the pullback of final_matrix
@@ -162,10 +163,10 @@ class GreenModel(FSModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Transition loss at each point.
+            tf.tensor([bSize], real_dtype): Transition loss at each point.
         """
         inv_one_mask = self._get_inv_one_mask(points)
         patch_indices = tf.where(~inv_one_mask)[:, 1]
@@ -198,10 +199,10 @@ class GreenModel(FSModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Transition loss at each point.
+            tf.tensor([bSize], real_dtype): Transition loss at each point.
         """
         #cast to real
         #-2*laplacian because this is the actual 'laplace-beltrami operator', not just gabbar del delbar
@@ -233,14 +234,14 @@ class GreenModel(FSModel):
         .. math::
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 Prediction at each point.
         """
         # nn prediction
@@ -523,12 +524,12 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     omega = np.real(omega * np.conj(omega))
     
     points= pwo['point'][mask]
-    points = tf.cast(points,tf.complex128)
+    points = tf.cast(points,complex_dtype)
     
     # Convert special_point to complex tensor
     kahler_t=tf.math.real(BASIS['KMODULI'][0])
     special_point_complex=point_vec_to_complex(special_point)
-    special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],tf.complex128)
+    special_pullback=tf.cast(point_gen.pullbacks(tf.expand_dims(special_point_complex,axis=0))[0],complex_dtype)
     final_matrix = optimize_and_get_final_matrix(special_pullback, special_point, metricModel, kahler_t=kahler_t, plot_losses=False)
     
     # Calculate geodesic distances from each point to special_point using final_matrix
@@ -573,25 +574,25 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     
     
     realpoints=tf.concat((tf.math.real(points), tf.math.imag(points)), axis=-1)
-    realpoints=tf.cast(realpoints,tf.float64)
+    realpoints=tf.cast(realpoints,real_dtype)
 
-    X_train=tf.cast(X_train,tf.float64)
-    y_train=tf.cast(y_train,tf.float64)
-    X_val=tf.cast(X_val,tf.float64)
-    y_val=tf.cast(y_val,tf.float64)
-    #realpoints=tf.cast(realpoints,tf.float64)
+    X_train=tf.cast(X_train,real_dtype)
+    y_train=tf.cast(y_train,real_dtype)
+    X_val=tf.cast(X_val,real_dtype)
+    y_val=tf.cast(y_val,real_dtype)
+    #realpoints=tf.cast(realpoints,real_dtype)
 
-    #X_train=tf.cast(data['X_train'],tf.float64)
-    #y_train=tf.cast(data['y_train'],tf.float64)
-    #X_val=tf.cast(data['X_val'],tf.float64)
-    #y_val=tf.cast(data['y_val'],tf.float64)
+    #X_train=tf.cast(data['X_train'],real_dtype)
+    #y_train=tf.cast(data['y_train'],real_dtype)
+    #X_val=tf.cast(data['X_val'],real_dtype)
+    #y_val=tf.cast(data['y_val'],real_dtype)
     ncoords=int(len(X_train[0])/2)
 
     #y_train=data['y_train']
     #y_val=data['y_val']
     ys=tf.concat((y_train,y_val),axis=0)
-    weights=tf.cast(tf.expand_dims(ys[:,0],axis=-1),tf.float64)
-    omega=tf.cast(tf.expand_dims(ys[:,1],axis=-1),tf.float64)
+    weights=tf.cast(tf.expand_dims(ys[:,0],axis=-1),real_dtype)
+    omega=tf.cast(tf.expand_dims(ys[:,1],axis=-1),real_dtype)
     
     realpoints=tf.concat((X_train,X_val),axis=0)
     points=tf.complex(realpoints[:,0:ncoords],realpoints[:,ncoords:])
@@ -617,8 +618,8 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
 
     #still need to generate pullbacks apparently
     pullbacks = point_gen.pullbacks(points)
-    train_pullbacks=tf.cast(pullbacks[:t_i],tf.complex128) 
-    val_pullbacks=tf.cast(pullbacks[t_i:],tf.complex128) 
+    train_pullbacks=tf.cast(pullbacks[:t_i],complex_dtype) 
+    val_pullbacks=tf.cast(pullbacks[t_i:],complex_dtype) 
 
     # points = pwo['point'][mask]
     det = tf.math.real(absdets)  # * factorial / (2**nfold)
@@ -629,12 +630,12 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     #print("hi")
     vol_k_no6 = tf.math.reduce_mean(det_over_omega * weights[:,0], axis=-1)#missing factor of 6
     #print("hi")
-    kappaover6 = tf.cast(vol_k_no6,tf.float64) / tf.cast(volume_cy,tf.float64)
+    kappaover6 = tf.cast(vol_k_no6,real_dtype) / tf.cast(volume_cy,real_dtype)
     #rint(ratio)
     #print("hi")
-    #tf.cast(kappaover6,tf.float64)
+    #tf.cast(kappaover6,real_dtype)
     #print("hi")
-    det = tf.cast(det,tf.float64)
+    det = tf.cast(det,real_dtype)
     # print('kappa over nfold factorial! ')
     # print(kappaover6) 
 
@@ -642,7 +643,7 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
 
 
     nfold = tf.shape(special_pullback)[0].numpy()
-    volume_for_sources = tf.cast(vol_k_no6 / np.math.factorial(nfold),tf.float64)
+    volume_for_sources = tf.cast(vol_k_no6 / np.math.factorial(nfold),real_dtype)
     print('Volume for sources: ', volume_for_sources)
 
 
@@ -658,10 +659,10 @@ def prepare_dataset_Green(point_gen, data, dirname, special_point,metricModel,BA
     points_around_special=point_vec_to_real(points_around_special)
     special_points_train=points_around_special[0:t_i]
     special_points_val=points_around_special[t_i:]
-    special_pullbacks_train=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_train)),tf.complex128)
-    special_pullbacks_val=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_val)),tf.complex128)
-    inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),tf.complex128)# this cast is extraneous
-    inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),tf.complex128)# this cast is extraneous
+    special_pullbacks_train=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_train)),complex_dtype)
+    special_pullbacks_val=tf.cast(point_gen.pullbacks(point_vec_to_complex(special_points_val)),complex_dtype)
+    inv_mets_special_train=tf.cast(tf.linalg.inv(metricModel(special_points_train)),complex_dtype)# this cast is extraneous
+    inv_mets_special_val=tf.cast(tf.linalg.inv(metricModel(special_points_val)),complex_dtype)# this cast is extraneous
 
     omega1 = np.sqrt(3) * scipy.special.gamma(1/3)**3 / (2 * (2**(2/3)) * np.pi)*np.exp(-1j*np.pi/6)
     omega2 = np.exp(1j * np.pi/3) * omega1#*np.exp(-1j*np.pi/6)
@@ -830,7 +831,7 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
     total_length = tf.shape(input_vector)[0]
     num_batches = (total_length + batch_size - 1) // batch_size
 
-    result_array = tf.TensorArray(tf.float64, size=num_batches)
+    result_array = tf.TensorArray(real_dtype, size=num_batches)
     euler_sum = tf.constant(0.0)
     weight_sum = tf.constant(0.0)
 
@@ -882,8 +883,8 @@ def vector_to_hermitian_matrix(vec, n):
     tf.Tensor: Hermitian matrix.
     """
     # Reshape the vector into a lower triangular matrix
-    tril = tf.zeros((n, n), dtype=tf.complex128)
-    tril = tf.linalg.set_diag(tril, tf.cast(vec[:n]/2, tf.complex128))
+    tril = tf.zeros((n, n), dtype=complex_dtype)
+    tril = tf.linalg.set_diag(tril, tf.cast(vec[:n]/2, complex_dtype))
     
     # Calculate the number of elements in the lower triangular part (excluding diagonal)
     num_lower_tri = n * (n - 1) // 2
@@ -919,7 +920,7 @@ def sigmoid_like_function(x, transition_point=1, steepness=1):
     Returns:
     A value between 0 and 1
     """
-    x = tf.clip_by_value(x, 0, tf.float64.max)  # Ensure x is non-negative
+    x = tf.clip_by_value(x, 0, real_dtype.max)  # Ensure x is non-negative
     quadratic_part = (x / transition_point) ** 2
     return 1 - tf.exp(-steepness * quadratic_part)
 
@@ -927,26 +928,26 @@ def sigmoid_like_function(x, transition_point=1, steepness=1):
 def geodesic_distance_CPn(cpoint1, cpoint2, kahler_t, metricijbar=None):
     # Calculate geodesic distance between two points in CP^n
     # Check if point1 and point2 are complex-valued
-    if not isinstance(cpoint1, tf.Tensor) or not isinstance(cpoint2, tf.Tensor) or cpoint1.dtype not in (tf.complex128, tf.complex128) or cpoint2.dtype not in (tf.complex128, tf.complex128):
+    if not isinstance(cpoint1, tf.Tensor) or not isinstance(cpoint2, tf.Tensor) or cpoint1.dtype not in (complex_dtype, complex_dtype) or cpoint2.dtype not in (complex_dtype, complex_dtype):
         raise ValueError("Both point1 and point2 must be complex-valued tensors.")
     
     # Optionally, you can also check the dtype explicitly
-    if cpoint1.dtype != tf.complex128 and cpoint1.dtype != tf.complex128:
+    if cpoint1.dtype != complex_dtype and cpoint1.dtype != complex_dtype:
         raise TypeError(f"Expected cpoint1 to be complex128 or complex128, but got {cpoint1.dtype}")
-    if cpoint2.dtype != tf.complex128 and cpoint2.dtype != tf.complex128:
+    if cpoint2.dtype != complex_dtype and cpoint2.dtype != complex_dtype:
         raise TypeError(f"Expected cpoint2 to be complex128 or complex128, but got {cpoint2.dtype}")
     # Normalize the points using the metric
     if metricijbar is None:
         # Use identity metric for normalization
-        p1 = cpoint1 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,i->', cpoint1, tf.math.conj(cpoint1)))), tf.complex128)
-        p2 = cpoint2 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,i->', cpoint2, tf.math.conj(cpoint2)))), tf.complex128)
+        p1 = cpoint1 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,i->', cpoint1, tf.math.conj(cpoint1)))), complex_dtype)
+        p2 = cpoint2 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,i->', cpoint2, tf.math.conj(cpoint2)))), complex_dtype)
         
         # Calculate inner product with identity metric
         inner_product = tf.math.abs(tf.einsum('i,i->', p1, tf.math.conj(p2)))
     else:
         # Use specified metric for normalization
-        p1 = cpoint1 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,ij,j->', cpoint1, metricijbar, tf.math.conj(cpoint1)))), tf.complex128)
-        p2 = cpoint2 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,ij,j->', cpoint2, metricijbar, tf.math.conj(cpoint2)))), tf.complex128)
+        p1 = cpoint1 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,ij,j->', cpoint1, metricijbar, tf.math.conj(cpoint1)))), complex_dtype)
+        p2 = cpoint2 / tf.cast(tf.sqrt(tf.math.real(tf.einsum('i,ij,j->', cpoint2, metricijbar, tf.math.conj(cpoint2)))), complex_dtype)
         # Calculate inner product with specified metric
         inner_product = tf.math.abs(tf.einsum('i,ij,j->', p1, metricijbar, tf.math.conj(p2)))
     
@@ -975,14 +976,14 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
 
     def poly(cpoints,pg):
         p_exp = tf.expand_dims(cpoints, 1)
-        polys = tf.math.pow(p_exp, tf.cast(pg.BASIS['QB0'], tf.complex128))
+        polys = tf.math.pow(p_exp, tf.cast(pg.BASIS['QB0'], complex_dtype))
         polys = tf.reduce_prod(polys, axis=-1)
-        polys = tf.multiply(tf.cast(pg.BASIS['QF0'], tf.complex128), polys)
+        polys = tf.multiply(tf.cast(pg.BASIS['QF0'], complex_dtype), polys)
         polys = tf.reduce_sum(polys, axis=-1)
         return polys
 
     def poly_normed_abs_val(cpoints,pg):
-        deg = tf.cast(tf.reduce_sum(tf.cast(pg.BASIS['QB0'], tf.complex128),axis=-1)[0],tf.complex128)
+        deg = tf.cast(tf.reduce_sum(tf.cast(pg.BASIS['QB0'], complex_dtype),axis=-1)[0],complex_dtype)
         polys=poly(cpoints,pg)
         polysnormed=polys*tf.einsum('xi,xi->x',tf.math.conj(cpoints),cpoints)**(-deg/2)
         return tf.math.abs(polysnormed)
@@ -991,11 +992,11 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
         """Generate points uniformly distributed in a complex ball around a center point."""
         """eps is the minimum value for the radius, so that we don't divide by zero eventually"""
         diminteger=tf.shape(center)[-1]
-        dim = tf.cast(diminteger,tf.float64)  # Complex dimension
+        dim = tf.cast(diminteger,real_dtype)  # Complex dimension
 
         # Generate random complex directions
-        directions_real = tf.random.normal((num_points, diminteger),dtype=tf.float64)
-        directions_imag = tf.random.normal((num_points, diminteger),dtype=tf.float64)
+        directions_real = tf.random.normal((num_points, diminteger),dtype=real_dtype)
+        directions_imag = tf.random.normal((num_points, diminteger),dtype=real_dtype)
         directions = tf.complex(directions_real, directions_imag)
         directions = directions / tf.norm(directions, axis=1, keepdims=True)
 
@@ -1006,7 +1007,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
             radii = tf.math.abs(tf.random.uniform((num_points, 1)))  ** (1/dim) * radius
 
         # Combine to get points
-        points = center + directions * tf.cast(radii, tf.complex128)
+        points = center + directions * tf.cast(radii, complex_dtype)
         return points
 
     def poly_normed_abs_val_takes_real(real_points, pg):
@@ -1025,7 +1026,7 @@ def get_points_around_special(special_point_complex,radius,num_points,pg,uniform
         print(f"Initial mean loss: {tf.reduce_mean(losses_initial):.6e}, max loss: {tf.reduce_max(losses_initial):.6e}")
 
         # Convert the points to tf.Variable so they're trainable
-        realpoints = tf.Variable(realpoints, dtype=tf.float64)
+        realpoints = tf.Variable(realpoints, dtype=real_dtype)
         nfold = (len(cpoints[0])-2)
         if nfold==1:
             first_decrease_checkpoint=3e-4
@@ -1130,7 +1131,7 @@ def compute_Gijbar_from_Hijbar(Hijbar,cpoint,kahler_t=1.0):
     H = tf.einsum('iJ,i,J->',Hijbar,cpoint,tf.math.conj(cpoint))
     Hijbar_over_H = Hijbar/H
     HssH_over_H2 = tf.einsum('kJ,k,M,iM->iJ',Hijbar,cpoint,tf.math.conj(cpoint),Hijbar)/H**2
-    return tf.cast(kahler_t,tf.complex128)*(Hijbar_over_H-HssH_over_H2)
+    return tf.cast(kahler_t,complex_dtype)*(Hijbar_over_H-HssH_over_H2)
 
 
 def loss_function(vec, n, cpoint, pullback, g_CY, v_list, weights, kahler_t=1.0):
@@ -1188,7 +1189,7 @@ def optimize_matrix(rpoint, pullback, g_CY, v_list, weights, learning_rate=0.1, 
     m=n**2
     
     # Initialize parameters for all initializations
-    initial_params = tf.random.normal((n_init, m),dtype=tf.float64)
+    initial_params = tf.random.normal((n_init, m),dtype=real_dtype)
     vecs = tf.Variable(initial_params)
     optimizer = tf.keras.optimizers.Adam(learning_rate)
     
@@ -1200,7 +1201,7 @@ def optimize_matrix(rpoint, pullback, g_CY, v_list, weights, learning_rate=0.1, 
     @tf.function
     def train_step_batch(vecs):
         with tf.GradientTape() as tape:
-            matrix_batch = tf.map_fn(lambda v: vector_to_hermitian_matrix(v, n), vecs, dtype=tf.complex128)
+            matrix_batch = tf.map_fn(lambda v: vector_to_hermitian_matrix(v, n), vecs, dtype=complex_dtype)
             Gijbar_batch = tf.map_fn(lambda matrix: compute_Gijbar_from_Hijbar(matrix, cpoint, kahler_t), matrix_batch)
             pullback_gijbar_batch = tf.einsum('ai,BJ,niJ->naB', pullback, tf.math.conj(pullback), Gijbar_batch)
             loss1_batch = tf.reduce_sum(tf.abs(pullback_gijbar_batch - g_CY)**2, axis=[1, 2])
@@ -1337,7 +1338,7 @@ def optimize_and_get_final_matrix(special_pullback, special_point, metricModel, 
     if not tf.is_tensor(special_point):
         raise TypeError("special_point must be a tensor")
     
-    if special_point.dtype not in [tf.float32, tf.float64]:
+    if special_point.dtype not in [real_dtype, real_dtype]:
         raise TypeError(f"Expected special_point to be a real tensor (float32 or float64), but got {special_point.dtype}")
     
     n=tf.shape(special_pullback)[-1]

@@ -3,6 +3,7 @@ from laplacian_funcs import *
 import tensorflow as tf
 import os
 import numpy as np
+from cymetric.config import real_dtype, complex_dtype
 #from pympler import tracker
 
 def point_vec_to_complex(p):
@@ -103,9 +104,9 @@ class AlphaPrimeModel(FSModel):
         self.NLOSS = 2
         # variable or constant or just tensor?
         if alpha is not None:
-            self.alpha = [tf.Variable(a, dtype=tf.float64) for a in alpha]
+            self.alpha = [tf.Variable(a, dtype=real_dtype) for a in alpha]
         else:
-            self.alpha = [tf.Variable(1., dtype=tf.float64) for _ in range(self.NLOSS)]
+            self.alpha = [tf.Variable(1., dtype=real_dtype) for _ in range(self.NLOSS)]
         self.learn_transition = tf.cast(True, dtype=tf.bool)
         self.learn_laplacian = tf.cast(True, dtype=tf.bool)
 
@@ -115,10 +116,10 @@ class AlphaPrimeModel(FSModel):
         #self.learn_volk = tf.cast(False, dtype=tf.bool)
 
         self.custom_metrics = None
-        #self.kappa = tf.cast(BASIS['KAPPA'], dtype=tf.float64)
+        #self.kappa = tf.cast(BASIS['KAPPA'], dtype=real_dtype)
         self.gclipping = float(5.0)
         # add to compile?
-        #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float64))
+        #self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=real_dtype))
         self.phimodel =phimodel
         self.alphaprime=alphaprime
         self.euler_char=euler_char    
@@ -128,10 +129,10 @@ class AlphaPrimeModel(FSModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Transition loss at each point.
+            tf.tensor([bSize], real_dtype): Transition loss at each point.
         """
         inv_one_mask = self._get_inv_one_mask(points)
         patch_indices = tf.where(~inv_one_mask)[:, 1]
@@ -163,10 +164,10 @@ class AlphaPrimeModel(FSModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Transition loss at each point.
+            tf.tensor([bSize], real_dtype): Transition loss at each point.
         """
         #cast to real
         lpl_losses=tf.math.abs(tf.math.real(laplacian(self.model,x,pullbacks,invmetrics))-(sources))
@@ -183,14 +184,14 @@ class AlphaPrimeModel(FSModel):
                 partial_i \bar{\partial}_j \phi_{\text{NN}}
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 Prediction at each point.
         """
         # nn prediction
@@ -230,14 +231,14 @@ class AlphaPrimeModel(FSModel):
                 partial_i \bar{\partial}_j \phi_{\text{NN}}
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 Prediction at each point.
         """
         # nn prediction
@@ -479,17 +480,17 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     
-    X_train=tf.cast(data['X_train'],tf.float64)
-    y_train=tf.cast(data['y_train'],tf.float64)
-    X_val=tf.cast(data['X_val'],tf.float64)
-    y_val=tf.cast(data['y_val'],tf.float64)
+    X_train=tf.cast(data['X_train'],real_dtype)
+    y_train=tf.cast(data['y_train'],real_dtype)
+    X_val=tf.cast(data['X_val'],real_dtype)
+    y_val=tf.cast(data['y_val'],real_dtype)
     ncoords=int(len(X_train[0])/2)
 
     #y_train=data['y_train']
     #y_val=data['y_val']
     ys=tf.concat((y_train,y_val),axis=0)
-    weights=tf.cast(tf.expand_dims(ys[:,0],axis=-1),tf.float64)
-    omega=tf.cast(tf.expand_dims(ys[:,1],axis=-1),tf.float64)
+    weights=tf.cast(tf.expand_dims(ys[:,0],axis=-1),real_dtype)
+    omega=tf.cast(tf.expand_dims(ys[:,1],axis=-1),real_dtype)
     
     realpoints=tf.concat((X_train,X_val),axis=0)
     points=tf.complex(realpoints[:,0:ncoords],realpoints[:,ncoords:])
@@ -514,8 +515,8 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
 
     #still need to generate pullbacks apparently
     pullbacks = point_gen.pullbacks(points)
-    train_pullbacks=tf.cast(pullbacks[:t_i],tf.complex128) 
-    val_pullbacks=tf.cast(pullbacks[t_i:],tf.complex128) 
+    train_pullbacks=tf.cast(pullbacks[:t_i],complex_dtype) 
+    val_pullbacks=tf.cast(pullbacks[t_i:],complex_dtype) 
 
     # points = pwo['point'][mask]
     det = tf.math.real(absdets)  # * factorial / (2**nfold)
@@ -526,12 +527,12 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     #print("hi")
     vol_k_no6 = tf.math.reduce_mean(det_over_omega * weights[:,0], axis=-1)#missing factor of 6
     #print("hi")
-    kappaover6 = tf.cast(vol_k_no6,tf.float64) / tf.cast(volume_cy,tf.float64)
+    kappaover6 = tf.cast(vol_k_no6,real_dtype) / tf.cast(volume_cy,real_dtype)
     #rint(ratio)
     #print("hi")
-    tf.cast(kappaover6,tf.float64)
+    tf.cast(kappaover6,real_dtype)
     #print("hi")
-    det = tf.cast(det,tf.float64)
+    det = tf.cast(det,real_dtype)
     print('kappa over 6 ')
     print(kappaover6) 
  
@@ -703,15 +704,15 @@ class Q_compiled_function(tf.Module):
         print("compiling")
         self.compute_christoffel_symbols_holo_not_pb = tf.function( 
             self.compute_christoffel_symbols_holo_not_pb_uncomp,
-            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float64),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=real_dtype),)
         )
         self.compute_riemann_m_nb_rb_sbUP = tf.function( 
             self.compute_riemann_m_nb_rb_sbUP_uncomp,
-            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float64),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=real_dtype),)
         )
         self.compute_Q = tf.function( 
             self.compute_Q_uncomp,
-            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=tf.float64),)
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=real_dtype),)
         )
         print("compiled")
         #Now compile the various bits
@@ -729,9 +730,9 @@ class Q_compiled_function(tf.Module):
             Ig=tf.math.imag(g)
         #with tapeC.stop_recording():
         print('christoffel tape1')
-        dXreal_dRg= tf.cast(tapeC.batch_jacobian(Rg, x_vars),dtype=tf.complex128)
+        dXreal_dRg= tf.cast(tapeC.batch_jacobian(Rg, x_vars),dtype=complex_dtype)
         print('christoffel tape2')
-        dXreal_dIg = tf.cast(tapeC.batch_jacobian(Ig, x_vars),dtype=tf.complex128)
+        dXreal_dIg = tf.cast(tapeC.batch_jacobian(Ig, x_vars),dtype=complex_dtype)
         del tapeC
         print('del christoffel tape')
         inverseg=tf.linalg.inv(g)#this has indices inverse of a bbar = bbar a
@@ -774,9 +775,9 @@ class Q_compiled_function(tf.Module):
         #with tapeR.stop_recording():
         print('only runs during compilation')
         print('first gradienttape')
-        RdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(RgammaantiholoK_AN, x_vars),dtype=tf.complex128)
+        RdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(RgammaantiholoK_AN, x_vars),dtype=complex_dtype)
         print('second gradienttape')
-        IdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(IgammaantiholoK_AN, x_vars),dtype=tf.complex128)
+        IdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(IgammaantiholoK_AN, x_vars),dtype=complex_dtype)
         del tapeR
         print('tapes deleted')
 
@@ -835,8 +836,8 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
     total_length = tf.shape(input_vector)[0]
     num_batches = (total_length + batch_size - 1) // batch_size
 
-    result_Q_array = tf.TensorArray(tf.float64, size=num_batches)
-    result_R_array = tf.TensorArray(tf.complex128, size=num_batches)
+    result_Q_array = tf.TensorArray(real_dtype, size=num_batches)
+    result_R_array = tf.TensorArray(complex_dtype, size=num_batches)
     euler_sum = tf.constant(0.0)
     weight_sum = tf.constant(0.0)
 

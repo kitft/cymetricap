@@ -4,6 +4,7 @@ import tensorflow as tf
 import os
 import numpy as np
 #from pympler import tracker
+from cymetric.config import real_dtype, complex_dtype
 
 def point_vec_to_complex(p):
     #if len(p) == 0: 
