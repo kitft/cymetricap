@@ -8,6 +8,8 @@ from cymetric.models.fubinistudy import FSModel
 from cymetric.pointgen.nphelper import get_all_patch_degrees, compute_all_w_of_x, get_levicivita_tensor
 import numpy as np
 tfk = tf.keras
+from cymetric.config import real_dtype, complex_dtype
+
 
 
 class FreeModel(FSModel):
@@ -112,10 +114,10 @@ class FreeModel(FSModel):
         self.learn_volk = tf.cast(True, dtype=tf.bool)
 
         self.custom_metrics = None
-        self.kappa = tf.cast(tf.math.real(BASIS['KAPPA']), dtype=tf.float64)
+        self.kappa = tf.cast(tf.math.real(BASIS['KAPPA']), dtype=real_dtype)
         self.gclipping = float(5.0)
         # add to compile?
-        self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float64))
+        self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=real_dtype))
 
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Prediction of the NN.
@@ -125,7 +127,7 @@ class FreeModel(FSModel):
         The additional arguments are included for inheritance reasons.
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
@@ -237,7 +239,7 @@ class FreeModel(FSModel):
     #             cijk_loss = self.compute_kaehler_loss(x)
     #         else:
     #             cijk_loss = tf.zeros_like(x[:, 0])
-    #             # cijk_loss = tf.zeros(y.shape[-1], dtype=tf.float64)
+    #             # cijk_loss = tf.zeros(y.shape[-1], dtype=real_dtype)
 
     #         if self.learn_transition:
     #             t_loss = self.compute_transition_loss(x)
@@ -319,7 +321,7 @@ class FreeModel(FSModel):
     #         cijk_loss = self.compute_kaehler_loss(x)
     #     else:
     #         cijk_loss = tf.zeros_like(x[:, 0])
-    #         # cijk_loss = tf.zeros(y.shape[-1], dtype=tf.float64)
+    #         # cijk_loss = tf.zeros(y.shape[-1], dtype=real_dtype)
     #     if self.learn_transition:
     #         t_loss = self.compute_transition_loss(x)
     #     else:
@@ -381,7 +383,7 @@ class FreeModel(FSModel):
                 cijk_loss = self.compute_kaehler_loss(x)
             else:
                 cijk_loss = tf.zeros_like(x[:, 0])
-                # cijk_loss = tf.zeros(y.shape[-1], dtype=tf.float64)
+                # cijk_loss = tf.zeros(y.shape[-1], dtype=real_dtype)
             if self.learn_transition:
                 t_loss = self.compute_transition_loss(x)
             else:
@@ -442,7 +444,7 @@ class FreeModel(FSModel):
             cijk_loss = self.compute_kaehler_loss(x)
         else:
             cijk_loss = tf.zeros_like(x[:, 0])
-            # cijk_loss = tf.zeros(y.shape[-1], dtype=tf.float64)
+            # cijk_loss = tf.zeros(y.shape[-1], dtype=real_dtype)
         if self.learn_transition:
             t_loss = self.compute_transition_loss(x)
         else:
@@ -511,27 +513,27 @@ class FreeModel(FSModel):
                 \int_B g_{\text{out}}|_n
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
-            weights (tf.tensor([bSize], tf.float64)): Integration weights.
-            pred (tf.tensor([bSize, nfold, nfold], tf.complex128), optional):
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
+            weights (tf.tensor([bSize], real_dtype)): Integration weights.
+            pred (tf.tensor([bSize, nfold, nfold], complex_dtype), optional):
                 Prediction from `self(input_tensor)`.
                 If None will be calculated. Defaults to None.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Volk loss.
+            tf.tensor([bSize], real_dtype): Volk loss.
         """
         if pred is None:
             pred = self(input_tensor)
         
-        aux_weights = tf.cast(wo[:, 0] / wo[:, 1], dtype=tf.complex128)
+        aux_weights = tf.cast(wo[:, 0] / wo[:, 1], dtype=complex_dtype)
         aux_weights = tf.repeat(tf.expand_dims(aux_weights, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
         # pred = tf.repeat(tf.expand_dims(pred, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
-        # ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex128)
+        # ks = tf.eye(len(self.BASIS['KMODULI']), dtype=complex_dtype)
         # ks = tf.repeat(tf.expand_dims(self.fubini_study_pb(input_tensor), axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
         # input_tensor = tf.repeat(tf.expand_dims(input_tensor, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
         # print(input_tensor.shape, pred.shape, ks.shape)
         # actual_slopes = tf.vectorized_map(self._calculate_slope, [input_tensor, pred, ks])
-        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex128)
+        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=complex_dtype)
 
         def body(input_tensor, pred, ks, actual_slopes):
             f_a = self.fubini_study_pb(input_tensor, ts=ks[len(actual_slopes)])
@@ -592,7 +594,7 @@ class MultFSModel(FreeModel):
             g_{\text{out}; ij} = g_{\text{FS}; ij} (1_{ij} + g_{\text{NN}; ij})
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
@@ -636,7 +638,7 @@ class MatrixFSModel(FreeModel):
             g_{\text{out}; ik} = g_{\text{FS}; ij} (1_{jk} + g_{\text{NN}; jk})
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
@@ -674,14 +676,14 @@ class AddFSModel(FreeModel):
         .. math:: g_{\text{out}; ij} = g_{\text{FS}; ij}  + g_{\text{NN}; ij}
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 Prediction at each point.
         """
         nn_cont = self.to_hermitian(self.model(input_tensor, training=training))
@@ -740,14 +742,14 @@ class PhiFSModel(FreeModel):
                 partial_i \bar{\partial}_j \phi_{\text{NN}}
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 Prediction at each point.
         """
         # nn prediction
@@ -779,10 +781,10 @@ class PhiFSModel(FreeModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Transition loss at each point.
+            tf.tensor([bSize], real_dtype): Transition loss at each point.
         """
         inv_one_mask = self._get_inv_one_mask(points)
         patch_indices = tf.where(~inv_one_mask)[:, 1]
@@ -813,10 +815,10 @@ class PhiFSModel(FreeModel):
         r"""Computes the Kahler potential.
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Kahler potential.
+            tf.tensor([bSize], real_dtype): Kahler potential.
         """
         if self.nProjective > 1:
             # we go through each ambient space factor and create the Kahler potential.
@@ -873,14 +875,14 @@ class ToricModel(FreeModel):
             self.toric_data = kwargs['toric_data']
             del kwargs['toric_data']
         self.nfold = self.toric_data['dim_cy']
-        self.sections = [tf.cast(m, dtype=tf.complex128) for m in self.toric_data['exps_sections']]
+        self.sections = [tf.cast(m, dtype=complex_dtype) for m in self.toric_data['exps_sections']]
         self.patch_masks = np.array(self.toric_data['patch_masks'], dtype=bool)
         self.glsm_charges = np.array(self.toric_data["glsm_charges"])
         self.nPatches = len(self.patch_masks)
         self.nProjective = len(self.toric_data["glsm_charges"])
         super(ToricModel, self).__init__(*args, **kwargs)
         self.kmoduli = self.BASIS['KMODULI']
-        self.lc = tf.convert_to_tensor(get_levicivita_tensor(self.nfold), dtype=tf.complex128)
+        self.lc = tf.convert_to_tensor(get_levicivita_tensor(self.nfold), dtype=complex_dtype)
         self.slopes = self._target_slopes()
 
     def call(self, input_tensor, training=True, j_elim=None):
@@ -890,7 +892,7 @@ class ToricModel(FreeModel):
         .. math:: J = t^\alpha J_\alpha
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
@@ -916,17 +918,17 @@ class ToricModel(FreeModel):
 
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
-            pb (tf.tensor([bSize, nfold, ncoords], tf.float64)):
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
+            pb (tf.tensor([bSize, nfold, ncoords], real_dtype)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
             j_elim (tf.tensor([bSize], tf.int64)): index to be eliminated. 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
-            ts (tf.tensor([len(kmoduli)], tf.complex128)):
+            ts (tf.tensor([len(kmoduli)], complex_dtype)):
                 Kahler parameters. Defaults to the ones specified at time of point generation
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 FS-metric at each point.
         """
         if ts is None:
@@ -951,12 +953,12 @@ class ToricModel(FreeModel):
         .. math:: g_\alpha = \partial_i \bar\partial_j \ln \rho_\alpha
 
         Args:
-            points (tf.tensor([bSize, ncoords], tf.complex128)): Points.
+            points (tf.tensor([bSize, ncoords], complex_dtype)): Points.
             n (int, optional): n^th Kahler potential term. Defaults to None.
             t (tf.complex, optional): Volume factor. Defaults to 1+0j.
 
         Returns:
-            tf.tensor([bSize, ncoords, ncoords], tf.complex128): 
+            tf.tensor([bSize, ncoords, ncoords], complex_dtype): 
                 Metric contribution at each point for t_n.
         """
         alpha = 0 if n is None else n 
@@ -969,7 +971,7 @@ class ToricModel(FreeModel):
         J_alphas = float(1.) / zizj
         J_alphas = tf.einsum('x,xab->xab', float(1.) / (kappa_alphas**int(2)), J_alphas)
         coeffs = tf.einsum('xa,xb,ai,aj->xij', mss, mss, degrees, degrees) - tf.einsum('xa,xb,ai,bj->xij', mss, mss, degrees, degrees)
-        return J_alphas * coeffs * t/tf.constant(np.pi, dtype=tf.complex128)
+        return J_alphas * coeffs * t/tf.constant(np.pi, dtype=complex_dtype)
 
     def _generate_helpers(self):
         """Additional helper functions."""
@@ -977,9 +979,9 @@ class ToricModel(FreeModel):
         self.fixed_patches = self._generate_all_patches()
         patch_degrees = get_all_patch_degrees(self.glsm_charges, self.patch_masks)
         w_of_x, del_w_of_x, del_w_of_z = compute_all_w_of_x(patch_degrees, self.patch_masks)
-        self.patch_degrees = tf.cast(patch_degrees, dtype=tf.complex128)
-        self.transition_coefficients = tf.cast(w_of_x, dtype=tf.complex128)
-        self.transition_degrees = tf.cast(del_w_of_z, dtype=tf.complex128)
+        self.patch_degrees = tf.cast(patch_degrees, dtype=complex_dtype)
+        self.transition_coefficients = tf.cast(w_of_x, dtype=complex_dtype)
+        self.transition_degrees = tf.cast(del_w_of_z, dtype=complex_dtype)
         self.patch_masks = tf.cast(self.patch_masks, dtype=tf.bool)
         # Not needed; cause transition loss is different
         # self.degrees = None <- also only needed for rescaling and patches in FS
@@ -1076,13 +1078,13 @@ class ToricModel(FreeModel):
         compute a basis for all :math:`\partial w_i / \partial z_j` before hand.
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             i_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
             j_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
             fixed (tf.tensor([bSize, 1], tf.int64)): Elimination indices.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128): T_ij on the CY.
+            tf.tensor([bSize, nfold, nfold], complex_dtype): T_ij on the CY.
         """
         same_patch = tf.where(tf.math.reduce_all(i_mask == j_mask, axis=-1))
         diff_patch = tf.where(~tf.math.reduce_all(i_mask == j_mask, axis=-1))
@@ -1110,8 +1112,8 @@ class ToricModel(FreeModel):
         tij_red = tf.transpose(tij_red, perm=[0, 2, 1])
 
         # fill tij
-        tij_eye = tf.eye(self.nfold, batch_shape=[n_p-n_p_red], dtype=tf.complex128)
-        tij_all = tf.zeros((n_p, self.nfold, self.nfold), dtype=tf.complex128)
+        tij_eye = tf.eye(self.nfold, batch_shape=[n_p-n_p_red], dtype=complex_dtype)
+        tij_all = tf.zeros((n_p, self.nfold, self.nfold), dtype=complex_dtype)
         tij_all = tf.tensor_scatter_nd_update(tij_all, tf.reshape(diff_patch, (-1, 1)), tij_red)
         tij_all = tf.tensor_scatter_nd_update(tij_all, tf.reshape(same_patch, (-1, 1)), tij_eye)
         return tij_all
@@ -1164,14 +1166,14 @@ class PhiFSModelToric(ToricModel):
                 \partial_i \bar{\partial}_j \phi_{\text{NN}}
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 Prediction at each point.
         """
         # nn prediction
@@ -1201,12 +1203,12 @@ class PhiFSModelToric(ToricModel):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             num_random_scalings (int): If None, uses scalings for each patch to set one coordinate to one. 
                                        If a number, uses this many random scalings for \lambda
 
         Returns:
-            tf.tensor([bSize], tf.float64): Transition loss at each point.
+            tf.tensor([bSize], real_dtype): Transition loss at each point.
         """
         if num_random_scalings is None:
             return super(PhiFSModelToric, self).compute_transition_loss(points)
@@ -1215,11 +1217,11 @@ class PhiFSModelToric(ToricModel):
         num_pns = self.glsm_charges.shape[0]
         
         # we scale the lambdas_rand to have abs value in [0.1, 0.9]
-        scale_factor_rand = tf.cast(tf.random.uniform(minval=0.1, maxval=0.9, shape=(num_random_scalings, num_pns), dtype=tf.float64), dtype=tf.complex128)
+        scale_factor_rand = tf.cast(tf.random.uniform(minval=0.1, maxval=0.9, shape=(num_random_scalings, num_pns), dtype=real_dtype), dtype=complex_dtype)
         scale_factor_rand = tf.repeat(tf.expand_dims(scale_factor_rand, -1), repeats=self.ncoords, axis=-1)
         
         # real and imaginary part of random lambdas (we draw a different one for each ambient P^n)
-        lambdas_rand = tf.random.uniform(minval=-1, maxval=1, shape=(num_random_scalings, num_pns, 2), dtype=tf.float64)
+        lambdas_rand = tf.random.uniform(minval=-1, maxval=1, shape=(num_random_scalings, num_pns, 2), dtype=real_dtype)
         lambdas_rand = tf.complex(lambdas_rand[:,:,0], lambdas_rand[:,:,1])
         lambdas_rand = tf.repeat(tf.expand_dims(lambdas_rand, -1), repeats=self.ncoords, axis=-1)
         lambdas_rand = scale_factor_rand * lambdas_rand/(lambdas_rand * tf.math.conj(lambdas_rand))**(.5)  # rescale \lambdas
@@ -1245,11 +1247,11 @@ class PhiFSModelToric(ToricModel):
         .. math:: g_\alpha = \partial_i \bar\partial_j \ln \rho_\alpha
 
         Args:
-            points (tf.tensor([bSize, ncoords], tf.complex128)): Points.
+            points (tf.tensor([bSize, ncoords], complex_dtype)): Points.
             t (tf.complex, optional): Volume factor. Defaults to 1+0j.
 
         Returns:
-            tf.tensor([bSize, ncoords, ncoords], tf.complex128):
+            tf.tensor([bSize, ncoords, ncoords], complex_dtype):
                 Metric contribution at each point for t_n.
         """
         alpha = 0 if n is None else n
@@ -1258,7 +1260,7 @@ class PhiFSModelToric(ToricModel):
         ms = tf.math.reduce_prod(ms, axis=int(-1))
         mss = ms * tf.math.conj(ms)
         kappa_alphas = tf.reduce_sum(mss, int(-1))
-        return tf.cast(tf.math.real(t/np.pi), dtype=tf.float64) * tf.cast(tf.math.real(tf.math.log(kappa_alphas)), tf.float64)
+        return tf.cast(tf.math.real(t/np.pi), dtype=real_dtype) * tf.cast(tf.math.real(tf.math.log(kappa_alphas)), real_dtype)
 
     def get_kahler_potential(self, points):
         r"""Returns toric equivalent of the FS Kahler potential for each point.
@@ -1271,18 +1273,18 @@ class PhiFSModelToric(ToricModel):
         :math:`\rho_\alpha` is a basis of sections.
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
-            pb (tf.tensor([bSize, nfold, ncoords], tf.float64)):
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
+            pb (tf.tensor([bSize, nfold, ncoords], real_dtype)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 Kaehler metric at each point.
         """
-        cpoints = tf.cast(tf.complex(points[:, :self.ncoords], points[:, self.ncoords:]), dtype=tf.complex128)
+        cpoints = tf.cast(tf.complex(points[:, :self.ncoords], points[:, self.ncoords:]), dtype=complex_dtype)
 
         k_fs = self._fubini_study_n_potentials(cpoints, t=self.kmoduli[0])
         if len(self.kmoduli) != 1:
@@ -1318,7 +1320,7 @@ class MatrixFSModelToric(ToricModel):
             g_{\text{out}; ik} = g_{\text{FS}; ij} (1_{jk} + g_{\text{NN}; jk})
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.

@@ -161,7 +161,7 @@ def train_NN(my_args):
     mcy_logger.debug("Using {} for computation.".format(tf_devices))
     
     # extract architecture for NN
-    nfold = tf.cast(BASIS['NFOLD'], dtype=tf.float32).numpy()
+    nfold = tf.cast(BASIS['NFOLD'], dtype=real_dtype).numpy()
     n_in = data['X_train'].shape[1]
     n_hiddens, acts = args["HiddenLayers"], args["ActivationFunctions"]
     n_out = nfold**2
@@ -276,7 +276,7 @@ def get_g(my_args):
         
     BASIS = prepare_tf_basis(pickle.load(open(os.path.join(args['Dir'], 'basis.pickle'), 'rb')))
     kappa = BASIS['KAPPA'].numpy()
-    pts = tf.convert_to_tensor(pts, dtype=tf.float32)
+    pts = tf.convert_to_tensor(pts, dtype=real_dtype)
     model = tfk.models.load_model(os.path.join(args['Dir'], 'model'))
     if args['Model'] == 'PhiFS':
         fsmodel = PhiFSModel(model, BASIS)
@@ -342,7 +342,7 @@ def get_kahler_potential(my_args):
             mcy_logger.error("Model set to {}, but {} with toric data not found.".format(args['Model'], args['toric_data_path']))
         
     BASIS = prepare_tf_basis(pickle.load(open(os.path.join(args['Dir'], 'basis.pickle'), 'rb')))
-    pts = tf.convert_to_tensor(pts, dtype=tf.float32)
+    pts = tf.convert_to_tensor(pts, dtype=real_dtype)
     model = tfk.models.load_model(os.path.join(args['Dir'], 'model'))
     if args['Model'] == 'PhiFS':
         fsmodel = PhiFSModel(model, BASIS)

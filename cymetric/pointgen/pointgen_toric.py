@@ -16,6 +16,8 @@ from cymetric.pointgen.pointgen import PointGenerator
 from cymetric.pointgen.nphelper import generate_monomials, get_all_patch_degrees
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('toricpointgen')
+from cymetric.config import real_dtype, complex_dtype
+
 
 
 class ToricPointGenerator(PointGenerator):

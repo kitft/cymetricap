@@ -20,6 +20,8 @@ from wolframclient.language import Global as wlGlobal
 from wolframclient.serializers import export as wlexport
 from cymetric.pointgen.pointgen_cicy import CICYPointGenerator
 from cymetric.pointgen.nphelper import get_levicivita_tensor, prepare_dataset
+from cymetric.config import real_dtype, complex_dtype
+
 
 import logging
 logger = logging.getLogger('pointgenMathematica')

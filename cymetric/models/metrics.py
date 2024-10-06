@@ -7,6 +7,8 @@ and not y_pred, y_true as arguments.
 
 import tensorflow as tf
 tfk = tf.keras
+from cymetric.config import real_dtype, complex_dtype
+
 
 
 class SigmaLoss(tfk.metrics.Metric):

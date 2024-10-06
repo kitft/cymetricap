@@ -6,6 +6,7 @@ import itertools as it
 from cymetric.pointgen.nphelper import generate_monomials, get_levicivita_tensor
 import numpy as np
 tfk = tf.keras
+from cymetric.config import real_dtype, complex_dtype
 
 
 class FSModel(tfk.Model):
@@ -33,20 +34,20 @@ class FSModel(tfk.Model):
         self.nProjective = len(self.BASIS['AMBIENT'])
         self.nfold = int(tf.math.real(self.BASIS['NFOLD']))
         if norm is None:
-            self.n = [tf.cast(1., dtype=tf.float64) for _ in range(5)]
+            self.n = [tf.cast(1., dtype=real_dtype) for _ in range(5)]
             # Default: we want to punish violation of kählerity stronger
-            self.n[1] = tf.cast(2., dtype=tf.float64)
+            self.n[1] = tf.cast(2., dtype=real_dtype)
         else:
-            self.n = [tf.cast(n, dtype=tf.float64) for n in norm]
+            self.n = [tf.cast(n, dtype=real_dtype) for n in norm]
         # projective vars
         self.degrees = tf.cast(tf.ones_like(self.BASIS['AMBIENT']) + self.BASIS['AMBIENT'], dtype=tf.int32)
-        self.pi = tf.constant(tf.cast(np.pi, dtype=tf.complex128))
+        self.pi = tf.constant(tf.cast(np.pi, dtype=complex_dtype))
         self.nhyper = int(tf.cast(BASIS['NHYPER'], dtype=tf.int64))
         self._generate_helpers()
         
     def _generate_helpers(self):
         r"""Bunch of helper functions to run during initialization"""
-        self.lc = tf.convert_to_tensor(get_levicivita_tensor(self.nfold), dtype=tf.complex128)
+        self.lc = tf.convert_to_tensor(get_levicivita_tensor(self.nfold), dtype=complex_dtype)
         self.proj_matrix = self._generate_proj_matrix()
         self.nTransitions = self._patch_transitions()
         if self.nhyper == 1:
@@ -66,7 +67,7 @@ class FSModel(tfk.Model):
             s = np.sum(self.degrees[:i])
             e = np.sum(self.degrees[:i+1])
             matrix[:, s:e] = np.eye(self.degrees[i], dtype=np.complex128)
-            proj_matrix[str(i)] = tf.cast(matrix, dtype=tf.complex128)
+            proj_matrix[str(i)] = tf.cast(matrix, dtype=complex_dtype)
         return proj_matrix
 
     def _generate_proj_indices(self):
@@ -111,7 +112,7 @@ class FSModel(tfk.Model):
         return int(nTransitions)
 
     def _target_slopes(self):
-        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex128)
+        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=complex_dtype)
         
         if self.nfold == 1:
             slope = tf.einsum('a, xa->x', self.BASIS['INTNUMS'], ks)
@@ -158,7 +159,7 @@ class FSModel(tfk.Model):
             self.logger.error('Only implemented for nfold <= 5. Run the tensor contraction yourself :).')
             raise NotImplementedError
         
-        slope = tf.cast(1./tf.exp(tf.math.lgamma(tf.cast(tf.math.real(self.BASIS['NFOLD']), dtype=tf.float64) + 1)), dtype=tf.complex128) * slope
+        slope = tf.cast(1./tf.exp(tf.math.lgamma(tf.cast(tf.math.real(self.BASIS['NFOLD']), dtype=real_dtype) + 1)), dtype=complex_dtype) * slope
         return slope
 
     def call(self, input_tensor, training=True, j_elim=None):
@@ -199,8 +200,8 @@ class FSModel(tfk.Model):
             y_pred = self(x, training=False)
             pb = self.pullbacks(x)
             gij_re, gij_im = tf.math.real(y_pred), tf.math.imag(y_pred)
-        gijk_re = tf.cast(t1.batch_jacobian(gij_re, x), dtype=tf.complex128)
-        gijk_im = tf.cast(t1.batch_jacobian(gij_im, x), dtype=tf.complex128)
+        gijk_re = tf.cast(t1.batch_jacobian(gij_re, x), dtype=complex_dtype)
+        gijk_im = tf.cast(t1.batch_jacobian(gij_im, x), dtype=complex_dtype)
         cijk = 0.5*(gijk_re[:, :, :, :self.ncoords] +
                     gijk_im[:, :, :, self.ncoords:] +
                     1.j*gijk_im[:, :, :, :self.ncoords] -
@@ -224,17 +225,17 @@ class FSModel(tfk.Model):
 
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
-            pb (tf.tensor([bSize, nfold, ncoords], tf.float64)):
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
+            pb (tf.tensor([bSize, nfold, ncoords], real_dtype)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
             j_elim (tf.tensor([bSize], tf.int64)): index to be eliminated. 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
-            ts (tf.tensor([len(kmoduli)], tf.complex128)):
+            ts (tf.tensor([len(kmoduli)], complex_dtype)):
                 Kahler parameters. Defaults to the ones specified at time of point generation
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128):
+            tf.tensor([bSize, nfold, nfold], complex_dtype):
                 FS-metric at each point.
         """
         if ts is None:
@@ -281,14 +282,14 @@ class FSModel(tfk.Model):
             largest will be taken, etc..
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
             tf.tensor([bSize, nhyper], tf.int64): max(dQ/dz) index per hyper.
         """
         # creates coordinate mask with patch coordinates
         cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
-        available_mask = tf.cast(self._get_inv_one_mask(points), dtype=tf.complex128)
+        available_mask = tf.cast(self._get_inv_one_mask(points), dtype=complex_dtype)
 
         indices = []
         for i in range(self.nhyper):
@@ -300,7 +301,7 @@ class FSModel(tfk.Model):
                 max_dq = tf.argmax(tf.math.abs(dQdz*available_mask), axis=-1)
                 indices = tf.concat([indices, tf.reshape(max_dq, (-1, 1))], axis=-1)
             available_mask -= tf.one_hot(
-                indices[:, i], self.ncoords, dtype=tf.complex128)
+                indices[:, i], self.ncoords, dtype=complex_dtype)
         return indices
 
     @tf.function
@@ -317,13 +318,13 @@ class FSModel(tfk.Model):
         where x_a are the nfold good coordinates after eliminating j_elim.
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
         Returns:
-            tf.tensor([bSize, nfold, ncoords], tf.complex128): Pullback at each
+            tf.tensor([bSize, nfold, ncoords], complex_dtype): Pullback at each
                 point.
         """
         inv_one_mask = self._get_inv_one_mask(points)
@@ -332,9 +333,9 @@ class FSModel(tfk.Model):
             dQdz_indices = self._find_max_dQ_coords(points)
         else:
             dQdz_indices = j_elim
-        full_mask = tf.cast(inv_one_mask, dtype=tf.float64)
+        full_mask = tf.cast(inv_one_mask, dtype=real_dtype)
         for i in range(self.nhyper):
-            dQdz_mask = -1.*tf.one_hot(dQdz_indices[:, i], self.ncoords,dtype=tf.float64)
+            dQdz_mask = -1.*tf.one_hot(dQdz_indices[:, i], self.ncoords,dtype=real_dtype)
             full_mask = tf.math.add(full_mask, dQdz_mask)
         n_p = tf.cast(tf.reduce_sum(tf.ones_like(full_mask[:, 0])), dtype=tf.int64)
         full_mask = tf.cast(full_mask, dtype=tf.bool)
@@ -369,7 +370,7 @@ class FSModel(tfk.Model):
         all_dzdz = tf.einsum('xij,xjk->xki', tf.linalg.inv(B),-1.*dz_hyper)
 
 
-        identity = tf.eye(self.ncoords, dtype=tf.complex128)
+        identity = tf.eye(self.ncoords, dtype=complex_dtype)
         identities=tf.repeat(identity[tf.newaxis,:,:],n_p,axis=0)
 
         good_identity = tf.boolean_mask(identities, full_mask, axis=0)
@@ -380,7 +381,7 @@ class FSModel(tfk.Model):
 
         # Add computed values for eliminated coordinates
         for i in range(self.nhyper):
-            update_mask = tf.one_hot(dQdz_indices[:, i], self.ncoords, dtype=tf.complex128)
+            update_mask = tf.one_hot(dQdz_indices[:, i], self.ncoords, dtype=complex_dtype)
             update_mask = tf.repeat(update_mask[:, tf.newaxis, :], self.nfold, axis=1)
             pullbacks += update_mask * all_dzdz[:, :, i:i+1]
 
@@ -405,7 +406,7 @@ class FSModel(tfk.Model):
         r"""Takes indices ([bSize,nTrue], int) and creates a faux coordinates
         mask. NOTE: the output is *not* of boolean type.
         """
-        mask = tf.one_hot(indices, depth=self.ncoords,dtype=tf.float64)
+        mask = tf.one_hot(indices, depth=self.ncoords,dtype=real_dtype)
         mask = tf.math.reduce_sum(mask, axis=1)
         return mask
 
@@ -457,16 +458,16 @@ class FSModel(tfk.Model):
         ambient space factor specified by n.
 
         Args:
-            points (tf.tensor([bSize, ncoords], tf.complex128)): Coordinates of
+            points (tf.tensor([bSize, ncoords], complex_dtype)): Coordinates of
                 the n-th projective spce.
            t (tf.complex, optional): Volume factor. Defaults to 1+0j.
 
         Returns:
-            tf.tensor([bsize], tf.float64):
+            tf.tensor([bsize], real_dtype):
                 FS-metric in the ambient space coordinates.
         """
         point_square = tf.math.reduce_sum(tf.math.abs(points)**2, axis=-1)
-        return tf.cast(tf.math.real(t/self.pi), tf.float64) * tf.cast(tf.math.real(tf.math.log(point_square)), tf.float64)
+        return tf.cast(tf.math.real(t/self.pi), real_dtype) * tf.cast(tf.math.real(tf.math.log(point_square)), real_dtype)
 
     @tf.function
     def _fubini_study_n_metrics(self, points, n=None, t=tf.complex(1., 0.)):
@@ -474,23 +475,23 @@ class FSModel(tfk.Model):
         ambient space factor specified by n.
 
         Args:
-            points (tf.tensor([bSize, ncoords], tf.complex128)): Coordinates of
+            points (tf.tensor([bSize, ncoords], complex_dtype)): Coordinates of
                 the n-th projective spce.
             n (int, optional): Degree of P**n. Defaults to None(=self.ncoords).
             t (tf.complex, optional): Volume factor. Defaults to 1+0j.
 
         Returns:
-            tf.tensor([bsize, ncoords, ncoords], tf.complex128): 
+            tf.tensor([bsize, ncoords, ncoords], complex_dtype): 
                 FS-metric in the ambient space coordinates.
         """
         if n is None:
             n = self.ncoords
         point_square = tf.math.reduce_sum(tf.math.abs(points)**2, axis=-1)
-        point_square = tf.cast(point_square, dtype=tf.complex128)
+        point_square = tf.cast(point_square, dtype=complex_dtype)
         point_diag = tf.einsum('x,ij->xij', point_square,
-                               tf.cast(tf.eye(n), dtype=tf.complex128))
+                               tf.cast(tf.eye(n), dtype=complex_dtype))
         outer = tf.einsum('xi,xj->xij', tf.math.conj(points), points)
-        outer = tf.cast(outer, dtype=tf.complex128)
+        outer = tf.cast(outer, dtype=complex_dtype)
         gFS = tf.einsum('xij,x->xij', (point_diag - outer), point_square**-2)
         return gFS*t/self.pi
 
@@ -502,7 +503,7 @@ class FSModel(tfk.Model):
             Legacy code. Currently not used anywhere. Remove?
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
             tf.tensor([bSize, nfold, ncoords], tf.bool): Good coord mask.
@@ -512,11 +513,11 @@ class FSModel(tfk.Model):
         cpoints = tf.complex(points[:, :self.ncoords],
                              points[:, self.ncoords:])
         dQdz = self._compute_dQdz(cpoints)
-        dQdz = dQdz*tf.cast(inv_one_mask, dtype=tf.complex128)
+        dQdz = dQdz*tf.cast(inv_one_mask, dtype=complex_dtype)
         indices = tf.argmax(tf.math.abs(dQdz), axis=-1)
-        dQdz_mask = -1.*tf.one_hot(indices, self.ncoords,dtype=tf.float64)
+        dQdz_mask = -1.*tf.one_hot(indices, self.ncoords,dtype=real_dtype)
         full_mask = tf.math.add(
-            tf.cast(inv_one_mask, dtype=tf.float64), dQdz_mask)
+            tf.cast(inv_one_mask, dtype=real_dtype), dQdz_mask)
         return tf.cast(full_mask, dtype=tf.bool)
 
     @tf.function
@@ -548,7 +549,7 @@ class FSModel(tfk.Model):
         # TODO: think about how to avoid loop and concat.
         full_norm = 1.
         for i in range(self.nProjective):
-            degrees = tf.ones(self.degrees[i], dtype=tf.complex128)
+            degrees = tf.ones(self.degrees[i], dtype=complex_dtype)
             tmp_norm = tf.einsum('i,x->xi', degrees, norm[:, i])
             if i == 0:
                 full_norm = tmp_norm
@@ -566,10 +567,10 @@ class FSModel(tfk.Model):
                 ||g^k - T_{jk} \cdot g^j T^\dagger_{jk}||_n
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize], tf.float64): Transition loss at each point.
+            tf.tensor([bSize], real_dtype): Transition loss at each point.
         """
         inv_one_mask = self._get_inv_one_mask(points)
         patch_indices = tf.where(~inv_one_mask)[:, 1]
@@ -644,13 +645,13 @@ class FSModel(tfk.Model):
                        & \dots
 
         Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float64)): Points.
+            points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             i_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
             j_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
             fixed (tf.tensor([bSize, 1], tf.int64)): Elimination indices.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128): T_ij on the CY.
+            tf.tensor([bSize, nfold, nfold], complex_dtype): T_ij on the CY.
         """
         same_patch = tf.where(tf.math.reduce_all(i_mask == j_mask, axis=-1))
         diff_patch = tf.where(~tf.math.reduce_all(i_mask == j_mask, axis=-1))
@@ -667,14 +668,14 @@ class FSModel(tfk.Model):
         p2 = tf.reshape(tf.where(j_mask_red)[:, 1], (-1, self.nProjective))
 
         # g1
-        g1_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords,dtype=tf.float64), axis=-2)
+        g1_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords,dtype=real_dtype), axis=-2)
         g1_mask = g1_mask + i_mask_red
         g1_mask = ~tf.cast(g1_mask, dtype=tf.bool)
         g1_i = tf.where(g1_mask)
         g1_i = tf.reshape(g1_i[:, 1], (-1, self.nfold))
 
         # g2
-        g2_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords,dtype=tf.float64), axis=-2)
+        g2_mask = tf.reduce_sum(tf.one_hot(fixed_red, self.ncoords,dtype=real_dtype), axis=-2)
         g2_mask = g2_mask + j_mask_red
         g2_mask = ~tf.cast(g2_mask, dtype=tf.bool)
         g2_i = tf.where(g2_mask)
@@ -691,7 +692,7 @@ class FSModel(tfk.Model):
             tf.boolean_mask(points_red, i_mask_red) / tf.boolean_mask(points_red, j_mask_red),
             (-1, self.nProjective))
         tij_red = tf.zeros((n_p_red, self.nfold, self.nfold), 
-                           dtype=tf.complex128)
+                           dtype=complex_dtype)
         # fill the mixed ratio elements
         for j in range(self.nProjective):
             t_pos = tf.einsum('xi,xj->xij',
@@ -724,8 +725,8 @@ class FSModel(tfk.Model):
         c_pos = tf.concat((c_pos[:, 0:1], c_pos[:, 2:3], c_pos[:, 1:2]), axis=-1)
         tij_red = tf.tensor_scatter_nd_update(tij_red, c_pos, c_values)
         # fill tij
-        tij_eye = tf.eye(self.nfold, batch_shape=[n_p-n_p_red], dtype=tf.complex128)
-        tij_all = tf.zeros((n_p, self.nfold, self.nfold), dtype=tf.complex128)
+        tij_eye = tf.eye(self.nfold, batch_shape=[n_p-n_p_red], dtype=complex_dtype)
+        tij_all = tf.zeros((n_p, self.nfold, self.nfold), dtype=complex_dtype)
         tij_all = tf.tensor_scatter_nd_update(
             tij_all, tf.reshape(diff_patch, (-1, 1)), tij_red)
         tij_all = tf.tensor_scatter_nd_update(
@@ -738,15 +739,15 @@ class FSModel(tfk.Model):
         in patches i and j with transition matrix Tij.
 
         Args:
-            gj (tf.tensor([bSize, nfold, nfold], tf.complex128)):
+            gj (tf.tensor([bSize, nfold, nfold], complex_dtype)):
                 Metric in patch j.
-            gi (tf.tensor([bSize, nfold, nfold], tf.complex128)):
+            gi (tf.tensor([bSize, nfold, nfold], complex_dtype)):
                 Metric in patch i.
-            Tij (tf.tensor([bSize, nfold, nfold], tf.complex128)):
+            Tij (tf.tensor([bSize, nfold, nfold], complex_dtype)):
                 Transition matrix from patch i to patch j.
 
         Returns:
-            tf.tensor([bSize, nfold, nfold], tf.complex128): 
+            tf.tensor([bSize, nfold, nfold], complex_dtype): 
                 .. math::`g_j - T^{ij} g_i T^{ij,\dagger}`
         """
         return gj - tf.einsum('xij,xjk,xkl->xil', Tij, gi,
@@ -782,7 +783,7 @@ class FSModel(tfk.Model):
                 log = tf.math.log(det)
             di_dg = tape2.gradient(log, x_vars)
         didj_dg = tf.cast(tape1.batch_jacobian(di_dg, x_vars),
-                          dtype=tf.complex128)
+                          dtype=complex_dtype)
         # add derivatives together to complex tensor
         ricci_ij = didj_dg[:, 0:self.ncoords, 0:self.ncoords]
         ricci_ij += 1j*didj_dg[:, 0:self.ncoords, self.ncoords:]

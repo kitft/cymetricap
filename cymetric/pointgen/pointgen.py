@@ -12,6 +12,8 @@ from cymetric.pointgen.nphelper import prepare_basis_pickle, prepare_dataset, ge
 from sympy.geometry.util import idiff
 from joblib import Parallel, delayed
 import itertools
+from cymetric.config import real_dtype, complex_dtype
+
 
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('pointgen')

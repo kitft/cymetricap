@@ -6,6 +6,8 @@ import numpy as np
 import pickle
 import itertools as it
 from sympy import LeviCivita
+from cymetric.config import real_dtype, complex_dtype
+
 
 
 def get_levicivita_tensor(dim):

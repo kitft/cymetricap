@@ -13,6 +13,8 @@ import logging
 import sys as sys
 import tensorflow as tf
 tfk = tf.keras
+from cymetric.config import real_dtype, complex_dtype
+
 
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('Donaldson')
@@ -555,11 +557,11 @@ class HbalancedModel(FSModel):
                  BASIS, **kwargs):
         super(HbalancedModel, self).__init__(
             BASIS=BASIS, **kwargs)
-        self.hbalanced = tf.cast(hb, dtype=tf.complex64)
-        self.sections = tf.cast(sections, dtype=tf.complex64)
-        self.jacobians = tf.cast(jacobians, dtype=tf.complex64)
-        self.j_factors = tf.cast(j_factors, dtype=tf.complex64)
-        self.k = tf.cast(k, dtype=tf.complex64)
+        self.hbalanced = tf.cast(hb, dtype=complex_dtype)
+        self.sections = tf.cast(sections, dtype=complex_dtype)
+        self.jacobians = tf.cast(jacobians, dtype=complex_dtype)
+        self.j_factors = tf.cast(j_factors, dtype=complex_dtype)
+        self.k = tf.cast(k, dtype=complex_dtype)
 
     def call(self, input_tensor, training=True):
         return self.g_pull_backs(input_tensor)
@@ -626,7 +628,7 @@ class HbalancedModel(FSModel):
             tmp_ricci
         )
         det = tf.math.real(tf.linalg.det(self(points)))
-        nfold = tf.cast(self.nfold, dtype=tf.float32)
+        nfold = tf.cast(self.nfold, dtype=real_dtype)
         factorial = tf.exp(tf.math.lgamma(nfold+1))
         det = det * factorial / (2**nfold)
         det_over_omega = det / omegas

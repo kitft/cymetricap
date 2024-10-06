@@ -1,4 +1,5 @@
 import numpy as np
+from cymetric.config import real_dtype, complex_dtype
 
 # ML packages
 import tensorflow as tf
@@ -63,7 +64,7 @@ def get_section_degrees(ambient_coords, deg):
     for i in range(nProj):
         ni_vars = ambient_coords[i+1] - ambient_coords[i]
         tmp_degrees = [tf.cast(np.array(list(
-            generate_monomials(ni_vars, deg))), dtype=tf.complex64)]
+            generate_monomials(ni_vars, deg))), dtype=complex_dtype)]
         if i == 0:
             section_degrees = tmp_degrees
         else:
@@ -86,15 +87,15 @@ def compute_df(points, ambient_coords, deg):
 
 def compute_laplacian_parts(model, data, deg, ambient_coords):
     weights = data['y_val'][:,-2]
-    kappa = tf.cast(1/tf.math.reduce_mean(weights), dtype=tf.complex64)
-    points = tf.cast(data['X_val'], tf.float32)
+    kappa = tf.cast(1/tf.math.reduce_mean(weights), dtype=complex_dtype)
+    points = tf.cast(data['X_val'], real_dtype)
     cpoints = tf.complex(points[:, :model.ncoords],
                          points[:, model.ncoords:])
     predictions = model.predict(points)
     pullbacks = tf.cast(data['val_pullbacks'], dtype=cpoints.dtype)
     ginv = tf.linalg.inv(predictions)
     detg = tf.linalg.det(predictions)
-    int_weight = tf.cast(detg*weights, dtype=tf.complex64)
+    int_weight = tf.cast(detg*weights, dtype=complex_dtype)
     ginv_ambient = tf.einsum('xib,xij,xja->xba',
         pullbacks, ginv, tf.math.conj(pullbacks))
     df, dfb = compute_df(cpoints, ambient_coords, deg)

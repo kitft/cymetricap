@@ -13,6 +13,8 @@ import scipy.optimize as opt
 from joblib import Parallel, delayed
 from cymetric.pointgen.pointgen import PointGenerator
 from cymetric.pointgen.nphelper import generate_monomials, prepare_dataset, get_levicivita_tensor
+from cymetric.config import real_dtype, complex_dtype
+
 
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('CICYpointgen')
