@@ -869,7 +869,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         #self.layers_list += [SquareDenseVarNoAct(input_dim=layer_sizes[len(layer_sizes)-2],units=layer_sizes[len(layer_sizes)-1],stddev=set_stddev)]
         #i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
 
-        self.layers_list = [tfk.layers.Dense(units=layer_sizes[i+1],activation=activation)
+        self.layers_list = [tfk.layers.Dense(units=layer_sizes[i+1],activation=activation, input_shape=(layer_sizes[i],) if i == 0 else None)
                             for i in range(len(layer_sizes)-2-1)]#i.e. 0->1,1->2,... layer_sizes-2->layer_sizes-3->layer_sizes-2. so misses the last 1. this should be 1.
         self.layers_list += [tfk.layers.Dense(units=layer_sizes[len(layer_sizes)-1],activation=None)]
         ##i.e. shapeofnetwork=[nfirstlayer]+shapeofinternalnetwork+[1], so the first ones gets up to the +1
