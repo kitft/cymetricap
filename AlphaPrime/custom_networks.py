@@ -907,6 +907,7 @@ class BiholoModelFuncGENERAL(tf.keras.Model):
         ### incorrect!
         #return self.layers_list[-1](inputs)
         out=(1/np.pi)*(1/2**(len(self.layers_list)))*self.layers_list[-1](tf.math.log(tf.math.abs(inputs)))
+        return out
         return tf.clip_by_value(out,-1e6,1e6)
 
 # class SquareDenseVar(tf.keras.layers.Layer):
