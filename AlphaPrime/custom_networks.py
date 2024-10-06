@@ -279,9 +279,7 @@ class bihom_function_generator(tf.Module):
 
     @tf.function
     def __call__(self, points):
-        #k_fs = tf.zeros_like(points[:, 0], dtype=real_dtype)
         k_fs=tf.zeros([tf.shape(points)[0]],dtype=real_dtype)
-        #kappas_prod = tf.ones_like(points[:, 0], dtype=real_dtype)
         kappas_prod=tf.ones([tf.shape(points)[0]],dtype=real_dtype)
         iterative_real = tf.zeros_like(points[:, 0:1], dtype=real_dtype)
         iterative_imag = tf.zeros_like(points[:, 0:1], dtype=real_dtype)
@@ -295,12 +293,7 @@ class bihom_function_generator(tf.Module):
             
             k_fs += _fubini_study_n_potentials(cpoints, self.kmoduli[i])
             kappas = tf.reduce_sum(tf.abs(cpoints)**2, axis=-1)
-            #tf.print("dtypes of kappas, cpoints, points, etc.")
-            #tf.print(kappas.dtype, cpoints.dtype, points.dtype)
-            #print("dtypes of kappas, cpoints, points, etc.")
-            #print(kappas.dtype, cpoints.dtype, points.dtype)
         
-            tf.print("KAPPAS real_dtype", real_dtype)
             kappas_prod *= kappas
 
             real, imag = getrealandimagofprod(cpoints)
