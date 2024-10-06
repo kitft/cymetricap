@@ -300,6 +300,7 @@ class bihom_function_generator(tf.Module):
             #print("dtypes of kappas, cpoints, points, etc.")
             #print(kappas.dtype, cpoints.dtype, points.dtype)
         
+            tf.print("KAPPAS real_dtype", real_dtype)
             kappas_prod *= kappas
 
             real, imag = getrealandimagofprod(cpoints)
