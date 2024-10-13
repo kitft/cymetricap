@@ -537,7 +537,11 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     print(kappaover6) 
  
     source_computing_class= Q_compiled_function(metricModel,realpoints[0:batch_size],batch_size)    
+    orig_CY_R_computing_class= Riemann_compiled_function(metricModel.fubini_study_pb,realpoints[0:batch_size],batch_size)
+    print("Qs")
     Q_values,euler_all_with_sqrtg,Riemann_tensors = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
+    print("Riemann_tensors")
+    Riemann_tensors_FS=compute_batched_func_Riemann_only(orig_CY_R_computing_class.compute_riemann_m_nb_rb_sbUP,realpoints, batch_size)
     #sources = euler_char/volume - Qs
     sources = euler_char/(vol_k_no6/6)-Q_values
     sources_train=sources[:t_i]
@@ -558,7 +562,8 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
                             val_pullbacks=val_pullbacks,
                             inv_mets_val=inv_mets_val,
                             sources_val=sources_val,
-                            riemann_tensors=Riemann_tensors
+                            riemann_tensors=Riemann_tensors,
+                            riemann_tensors_FS=Riemann_tensors_FS
                             )
     except:
         dict= {
@@ -572,10 +577,11 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
             'val_pullbacks': val_pullbacks,
             'inv_mets_val': inv_mets_val,
             'sources_val': sources_val,
-            'riemann_tensors':Riemann_tensors
+            'riemann_tensors':Riemann_tensors,
+            'riemann_tensors_FS':Riemann_tensors_FS
         }
     print("print 'kappa/6'")
-    return [dict,Riemann_tensors]#point_gen.compute_kappa(points, weights, omega)
+    return [dict,Riemann_tensors,Riemann_tensors_FS]#point_gen.compute_kappa(points, weights, omega)
 
 
 def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, batch_sizes=[64, 10000],
@@ -807,6 +813,99 @@ class Q_compiled_function(tf.Module):
     # added the factor of 8 back in
 
 
+class Riemann_compiled_function(tf.Module):
+    def __init__(self,phimodel,ptsrealtoinit,batch_size):
+        self.phimodel=phimodel
+        self.batch_size=batch_size
+        print("compiling")
+        self.compute_christoffel_symbols_holo_not_pb = tf.function( 
+            self.compute_christoffel_symbols_holo_not_pb_uncomp,
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=real_dtype),)
+        )
+        self.compute_riemann_m_nb_rb_sbUP = tf.function( 
+            self.compute_riemann_m_nb_rb_sbUP_uncomp,
+            input_signature=(tf.TensorSpec(shape=[batch_size, self.phimodel.ncoords*2], dtype=real_dtype),)
+        )
+        print("compiled")
+        #Now compile the various bits
+        self.compute_christoffel_symbols_holo_not_pb(ptsrealtoinit[0:batch_size])
+        self.compute_riemann_m_nb_rb_sbUP(ptsrealtoinit[0:batch_size])
+
+    def compute_christoffel_symbols_holo_not_pb_uncomp(self,x):
+        x_vars = x
+        print('starting christoffel tape')
+        with tf.GradientTape(persistent=True) as tapeC:
+            tapeC.watch(x_vars)
+            g=self.phimodel(x_vars)
+            Rg=tf.math.real(g)
+            Ig=tf.math.imag(g)
+        #with tapeC.stop_recording():
+        print('christoffel tape1')
+        dXreal_dRg= tf.cast(tapeC.batch_jacobian(Rg, x_vars),dtype=complex_dtype)
+        print('christoffel tape2')
+        dXreal_dIg = tf.cast(tapeC.batch_jacobian(Ig, x_vars),dtype=complex_dtype)
+        del tapeC
+        print('del christoffel tape')
+        inverseg=tf.linalg.inv(g)#this has indices inverse of a bbar = bbar a
+
+        # add derivatives together to complex tensor
+        #derivative goes in the last index
+        #df/dz = f_x -i f_y/2.
+        # dXcomplex_dg = dXreal_dg[:, :,:,0:self.phimodel.ncoords]
+        # dXcomplex_dg -= 1j*dXreal_dg[:, :,:,self.phimodel.ncoords:]
+        # dXcomplex_dg *= 1/2
+        dXcomplex_dRg = dXreal_dRg[:, :,:,0:self.phimodel.ncoords]
+        dXcomplex_dRg -= 1j*dXreal_dRg[:, :,:,self.phimodel.ncoords:]
+        dXcomplex_dRg *= 1/2
+        dXcomplex_dIg = dXreal_dIg[:, :,:,0:self.phimodel.ncoords]
+        dXcomplex_dIg -= 1j*dXreal_dIg[:, :,:,self.phimodel.ncoords:]
+        dXcomplex_dIg *= 1/2
+        dXcomplex_dg=(dXcomplex_dRg+1j*dXcomplex_dIg)
+
+        #OMIT the pullback, as we don't want to have to take the derivative of the pullback
+        gammac_Ib = tf.einsum('xDc,xbDk->xckb', inverseg,#k index is the derivative index, capital indicates conjugate
+                                 dXcomplex_dg)#ck is conjugated
+
+        return gammac_Ib
+
+    def compute_riemann_m_nb_rb_sbUP_uncomp(self,x):
+        # take derivatives
+        x_vars=x
+        pullbacks = (self.phimodel.pullbacks(x_vars))
+        pullbacksbar=tf.math.conj(pullbacks)
+        #compute the pullbacks outside the gradienttape - this is fine due to holo/antiholo nature
+        # do the contraction inside the gradienttape to minimise memory footprint
+        print('starting tapeR')
+        with tf.GradientTape(persistent=True) as tapeR:
+            tapeR.watch(x_vars)
+            gammaholo=self.compute_christoffel_symbols_holo_not_pb(x_vars)
+            gammaantiholoK_MN=tf.math.conj(gammaholo)
+            gammaantiholoK_AN = tf.einsum('xAI,xSIR->xSAR',pullbacksbar,gammaantiholoK_MN)
+            RgammaantiholoK_AN=tf.math.real(gammaantiholoK_AN)
+            IgammaantiholoK_AN=tf.math.imag(gammaantiholoK_AN)
+        #with tapeR.stop_recording():
+        print('only runs during compilation')
+        print('first gradienttape')
+        RdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(RgammaantiholoK_AN, x_vars),dtype=complex_dtype)
+        print('second gradienttape')
+        IdXreal_dGammaC= tf.cast(tapeR.batch_jacobian(IgammaantiholoK_AN, x_vars),dtype=complex_dtype)
+        del tapeR
+        print('tapes deleted')
+
+        # add derivatives together to complex tensor
+        #derivative goes in the last index
+        #df/dz = f_x -i f_y/2.
+        RdXcomplex_dGammaC = RdXreal_dGammaC[:, :,:,:,0:self.phimodel.ncoords]
+        RdXcomplex_dGammaC -= 1j*RdXreal_dGammaC[:, :,:,:,self.phimodel.ncoords:]
+        RdXcomplex_dGammaC *= 1/2#has index structure g^c_aB,ki
+        IdXcomplex_dGammaC = IdXreal_dGammaC[:, :,:,:,0:self.phimodel.ncoords]
+        IdXcomplex_dGammaC -= 1j*IdXreal_dGammaC[:, :,:,:,self.phimodel.ncoords:]
+        IdXcomplex_dGammaC *= 1/2#has index structure g^c_aB,k
+        dXcomplex_dGammaC=RdXcomplex_dGammaC+(IdXcomplex_dGammaC)*1.j
+        riemann_m_nb_rb_sbUP = tf.einsum('xmk,xSNRk->xmNRS', pullbacks,dXcomplex_dGammaC)#ck is conjugated
+
+        return riemann_m_nb_rb_sbUP    
+
 # def compute_batched_func(compute_Q,input_vector,batch_size,weights):
 #     #returns the Q vector, and the sqrt(g) Q vector
 #     print("computing batched with batch size " + str(batch_size) + " and total length " + str(len(input_vector)))
@@ -877,3 +976,30 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
     euler_all = weights[:total_length] * resultarr2
 
     return resultarr2, euler_all, result_R_stacked
+
+def compute_batched_func_Riemann_only(compute_R, input_vector, batch_size):
+    total_length = tf.shape(input_vector)[0]
+    num_batches = (total_length + batch_size - 1) // batch_size
+
+    result_R_array = tf.TensorArray(complex_dtype, size=num_batches)
+
+    for i in tf.range(num_batches):
+        start = i * batch_size
+        end = tf.minimum((i + 1) * batch_size, total_length)
+        batch = input_vector[start:end]
+
+        current_batch_size = tf.shape(batch)[0]
+        #fix incorrect length in final batch
+        if current_batch_size < batch_size:
+            repeat_times = tf.cast(tf.math.ceil(batch_size / current_batch_size), tf.int32)
+            batch = tf.tile(batch, [repeat_times,1])[0:batch_size]
+
+        result_R = compute_R(batch)
+        result_R_array = result_R_array.write(i, result_R)
+
+        tf.print("Processed batch", i+1, "of", num_batches)
+
+    result_R_stacked = result_R_array.stack()
+    result_R_stacked = tf.reshape(result_R_stacked, [-1])[:total_length]
+
+    return result_R_stacked
