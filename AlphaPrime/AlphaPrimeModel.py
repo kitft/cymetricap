@@ -549,7 +549,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
 
     print("Euler_characteristic with " + str(len(euler_all_with_sqrtg)) + "points: " + str(tf.reduce_mean(euler_all_with_sqrtg)))
     print("integral of sources: " + str(tf.reduce_mean(euler_char-euler_all_with_sqrtg)))
-    dict=[]
+    dictdata={}
     try:
         np.savez_compressed(os.path.join(dirname, 'dataset'),
                             X_train=X_train,
@@ -566,7 +566,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
                             riemann_tensors_FS=Riemann_tensors_FS
                             )
     except:
-        dict= {
+        dictdata= {
             'X_train': X_train,
             'y_train': y_train,
             'train_pullbacks': train_pullbacks,
@@ -581,7 +581,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
             'riemann_tensors_FS':Riemann_tensors_FS
         }
     print("print 'kappa/6'")
-    return dict,Riemann_tensors,Riemann_tensors_FS#point_gen.compute_kappa(points, weights, omega)
+    return dictdata,Riemann_tensors,Riemann_tensors_FS#point_gen.compute_kappa(points, weights, omega)
 
 
 def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, batch_sizes=[64, 10000],
