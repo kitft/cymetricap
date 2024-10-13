@@ -1013,7 +1013,44 @@ class BiholoModelFuncGENERAL_Q(tf.keras.Model):
         x = (1/np.pi) * (1/2**(len(self.layers_list))) * x
         return  x
 
+class BiholoModelFuncGENERAL_ratio_Q(tf.keras.Model):
+    def __init__(self, layer_sizes, BASIS, activation=tf.square, stddev=0.1, use_zero_network=False, constant_multiplier=1.0):
+        super().__init__()
+        
+        self.layers_list = []
+        self.layers_list2 = []
+        for i in range(1,len(layer_sizes) - 1):
+            self.layers_list.append(tf.keras.layers.Dense(units=layer_sizes[i], activation=activation))
+            self.layers_list2.append(tf.keras.layers.Dense(units=layer_sizes[i], activation=activation))
+        
+        final_layer_inits = tf.keras.initializers.Zeros if use_zero_network else tf.keras.initializers.Ones
+        self.layers_list.append(tf.keras.layers.Dense(units=layer_sizes[-1], use_bias=False, kernel_initializer=final_layer_inits))
+        self.layers_list2.append(tf.keras.layers.Dense(units=layer_sizes[-1], use_bias=False, kernel_initializer=final_layer_inits))
+        
+        self.BASIS = BASIS
+        self.nCoords = tf.reduce_sum(tf.cast(BASIS['AMBIENT'], tf.int32) + 1)
+        self.ambient = tf.cast(BASIS['AMBIENT'], tf.int32)
+        self.kmoduli = BASIS['KMODULI']
+        self.dim_output = layer_sizes[-1]
+        self.constant_multiplier = constant_multiplier
 
+    def call(self, inputs):
+        inputs = tf.complex(inputs[:, :self.nCoords], inputs[:, self.nCoords:])
+        #x = np.einsum('xi,xj->xij',tf.math.conj(inputs),inputs)
+        iterativereal,iterativeimag=getrealandimagofprod(inputs,return_mat=False)
+        x = tf.concat([iterativereal,iterativeimag],axis=-1)
+        y = tf.math.abs(tf.einsum('xi,xi->x',tf.math.conj(inputs),inputs))
+        x = tf.einsum('xi,x->xi',x,y**(-1))
+
+        inputs1 = x
+        inputs2 = x
+        for layer in self.layers_list[:-1]:
+            inputs1 = layer(inputs1)
+        for layer in self.layers_list2[:-1]:
+            inputs2 = layer(inputs2)
+        
+        out = self.layers_list[-1](tf.math.log(tf.math.abs(inputs1))) - self.layers_list2[-1](tf.math.log(tf.math.abs(inputs2)))
+        return tf.clip_by_value(self.constant_multiplier * out, -1e6, 1e6)
 
 # class SquareDenseVar(tf.keras.layers.Layer):
 #     def __init__(self, input_dim, units, activation=tf.square, stddev=0.05, trainable=True, positive_init=True):
