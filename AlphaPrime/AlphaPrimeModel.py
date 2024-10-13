@@ -617,7 +617,6 @@ def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, bat
         sample_weights = None
     if optimizer is None:
         optimizer = tf.keras.optimizers.Adam()
-    permint= tracker.SummaryTracker()
     for epoch in range(epochs):
         #print("internal")
         #print(permint.print_diff())
