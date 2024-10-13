@@ -538,9 +538,9 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
  
     source_computing_class= Q_compiled_function(metricModel,realpoints[0:batch_size],batch_size)    
     orig_CY_R_computing_class= Riemann_compiled_function(metricModel.fubini_study_pb,realpoints[0:batch_size],batch_size)
-    print("Qs")
+    print("\nQs")
     Q_values,euler_all_with_sqrtg,Riemann_tensors = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
-    print("Riemann_tensors")
+    print("\nRiemann_tensors")
     Riemann_tensors_FS=compute_batched_func_Riemann_only(orig_CY_R_computing_class.compute_riemann_m_nb_rb_sbUP,realpoints, batch_size)
     #sources = euler_char/volume - Qs
     sources = euler_char/(vol_k_no6/6)-Q_values
