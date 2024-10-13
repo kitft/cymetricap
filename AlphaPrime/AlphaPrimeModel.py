@@ -581,7 +581,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
             'riemann_tensors_FS':Riemann_tensors_FS
         }
     print("print 'kappa/6'")
-    return [dict,Riemann_tensors,Riemann_tensors_FS]#point_gen.compute_kappa(points, weights, omega)
+    return dict,Riemann_tensors,Riemann_tensors_FS#point_gen.compute_kappa(points, weights, omega)
 
 
 def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, batch_sizes=[64, 10000],
