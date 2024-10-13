@@ -537,7 +537,7 @@ def prepare_dataset_Alpha(point_gen, data, dirname, metricModel,euler_char,BASIS
     print(kappaover6) 
  
     source_computing_class= Q_compiled_function(metricModel,realpoints[0:batch_size],batch_size)    
-    orig_CY_R_computing_class= Riemann_compiled_function(metricModel.fubini_study_pb,realpoints[0:batch_size],batch_size)
+    orig_CY_R_computing_class= Riemann_compiled_function(metricModel.fubini_study_pb,realpoints[0:batch_size],batch_size,metricModel)
     print("\nQs")
     Q_values,euler_all_with_sqrtg,Riemann_tensors = compute_batched_func(source_computing_class.compute_Q,realpoints, batch_size,cy_weights)
     print("\nRiemann_tensors")
@@ -814,8 +814,10 @@ class Q_compiled_function(tf.Module):
 
 
 class Riemann_compiled_function(tf.Module):
-    def __init__(self,phimodel,ptsrealtoinit,batch_size):
+    def __init__(self,phimodel,ptsrealtoinit,batch_size,trained_metric_model):
         self.phimodel=phimodel
+        self.phimodel.ncoords = trained_metric_model.ncoords
+        self.phimodel.pullbacks = trained_metric_model.pullbacks
         self.batch_size=batch_size
         print("compiling")
         self.compute_christoffel_symbols_holo_not_pb = tf.function( 
