@@ -623,7 +623,7 @@ def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, bat
         sample_weights = None
     if optimizer is None:
         optimizer = tf.keras.optimizers.Adam()
-    for epoch in range(epochs):
+    for epoch in range(1):
         #print("internal")
         #print(permint.print_diff())
         batch_size = batch_sizes[0]
@@ -634,7 +634,7 @@ def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, bat
             print("\nEpoch {:2d}/{:d}".format(epoch + 1, epochs))
         history = alphaprimemodel.fit(
             data_train,
-            epochs=1, batch_size=batch_size, verbose=verbose,
+            epochs=epochs, batch_size=batch_size, verbose=verbose,
             callbacks=callbacks, sample_weight=sample_weights
         )
         #print(history)
@@ -647,24 +647,24 @@ def train_modelalpha(alphaprimemodel, data_train, optimizer=None, epochs=50, bat
         #add learning rate schedule
         # if loss is not decreasing, reduce learning rate
 
-        if epoch>5 and hist1['laplacian_loss'][-1]>hist1['laplacian_loss'][-2]:
-            alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.9
-            print("cutting LR, multiplying by 0.9 - new LR: " + str(alphaprimemodel.optimizer.lr))
+        # if epoch>5 and hist1['laplacian_loss'][-1]>hist1['laplacian_loss'][-2]:
+        #     alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.9
+        #     print("cutting LR, multiplying by 0.9 - new LR: " + str(alphaprimemodel.optimizer.lr))
 
-        #after 30 epochs, decrease learning rate by factor of 10
-        if epoch==10:
-            alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.1
-            print("cutting LR, multiplying by 0.1 - new LR: " + str(alphaprimemodel.optimizer.lr))
+        # #after 30 epochs, decrease learning rate by factor of 10
+        # if epoch==10:
+        #     alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.1
+        #     print("cutting LR, multiplying by 0.1 - new LR: " + str(alphaprimemodel.optimizer.lr))
 
-        # after 60 epochs, decrease lr by a factor of 10
-        if epoch==20:
-            alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.1
-            print("cutting LR, multiplying by 0.1 - new LR: " + str(alphaprimemodel.optimizer.lr))
+        # # after 60 epochs, decrease lr by a factor of 10
+        # if epoch==20:
+        #     alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.1
+        #     print("cutting LR, multiplying by 0.1 - new LR: " + str(alphaprimemodel.optimizer.lr))
 
-        #after 90 epochs, decrease lr by a factor of 10
-        if epoch==30:
-            alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.1
-            print("cutting LR, multiplying by 0.1 - new LR: " + str(alphaprimemodel.optimizer.lr))
+        # #after 90 epochs, decrease lr by a factor of 10
+        # if epoch==30:
+        #     alphaprimemodel.optimizer.lr = alphaprimemodel.optimizer.lr*0.1
+        #     print("cutting LR, multiplying by 0.1 - new LR: " + str(alphaprimemodel.optimizer.lr))
 
         if tf.math.is_nan(hist1['loss'][-1]):
             break
