@@ -972,9 +972,8 @@ def compute_batched_func(compute_Q, input_vector, batch_size, weights):
     resultarr2 = tf.math.real(result_Q_array.stack())
     resultarr2 = tf.reshape(resultarr2, [-1])[:total_length]
 
-    result_R_stacked = result_R_array.stack()
-    result_R_stacked = tf.reshape(result_R_stacked, [-1])[:total_length]
 
+    result_R_stacked = tf.concat(result_R_array.stack(),axis=0)[:total_length]
     euler_all = weights[:total_length] * resultarr2
 
     return resultarr2, euler_all, result_R_stacked
@@ -1001,7 +1000,8 @@ def compute_batched_func_Riemann_only(compute_R, input_vector, batch_size):
 
         tf.print("Processed batch", i+1, "of", num_batches)
 
-    result_R_stacked = result_R_array.stack()
-    result_R_stacked = tf.reshape(result_R_stacked, [-1])[:total_length]
+    result_R_stacked = tf.concat(result_R_array.stack(),axis=0)[:total_length]
+
+    #result_R_stacked = tf.reshape(result_R_stacked, [-1])[:total_length]
 
     return result_R_stacked
