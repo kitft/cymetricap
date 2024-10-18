@@ -40,9 +40,9 @@ class FSModel(tfk.Model):
         else:
             self.n = [tf.cast(n, dtype=real_dtype) for n in norm]
         # projective vars
-        self.degrees = tf.cast(tf.ones_like(self.BASIS['AMBIENT']) + self.BASIS['AMBIENT'], dtype=tf.int323232)
+        self.degrees = tf.cast(tf.ones_like(self.BASIS['AMBIENT']) + self.BASIS['AMBIENT'], dtype=tf.int32)
         self.pi = tf.constant(tf.cast(np.pi, dtype=complex_dtype))
-        self.nhyper = int(tf.cast(BASIS['NHYPER'], dtype=tf.int3264))
+        self.nhyper = int(tf.cast(BASIS['NHYPER'], dtype=tf.int32))
         self._generate_helpers()
         
     def _generate_helpers(self):
@@ -78,7 +78,7 @@ class FSModel(tfk.Model):
         for i, p in enumerate(self.degrees):
             for _ in range(p):
                 flat_list += [i]
-        return tf.cast(flat_list, dtype=tf.int3264)
+        return tf.cast(flat_list, dtype=tf.int32)
 
     def _generate_all_patches(self):
         r"""We generate all possible patches for CICYs. Note for CICYs with
@@ -95,7 +95,7 @@ class FSModel(tfk.Model):
                 all_patches = np.tile(all_patches, (int(self.nTransitions/len(all_patches)) + 1, 1))
                 fixed_patches += [all_patches[0:self.nTransitions]]
         fixed_patches = np.array(fixed_patches)
-        return tf.cast(fixed_patches, dtype=tf.int3264)
+        return tf.cast(fixed_patches, dtype=tf.int32)
 
     def _patch_transitions(self):
         r"""Computes the maximum number of patch transitions with same fixed
@@ -169,7 +169,7 @@ class FSModel(tfk.Model):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float)): Points.
             training (bool, optional): Switch between training and eval mode. Not used at the moment
-            j_elim (tf.array([bSize], tf.int3264)): index to be eliminated.
+            j_elim (tf.array([bSize], tf.int32)): index to be eliminated.
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -228,7 +228,7 @@ class FSModel(tfk.Model):
             points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             pb (tf.tensor([bSize, nfold, ncoords], real_dtype)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
-            j_elim (tf.tensor([bSize], tf.int3264)): index to be eliminated. 
+            j_elim (tf.tensor([bSize], tf.int32)): index to be eliminated. 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
             ts (tf.tensor([len(kmoduli)], complex_dtype)):
@@ -285,7 +285,7 @@ class FSModel(tfk.Model):
             points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
 
         Returns:
-            tf.tensor([bSize, nhyper], tf.int3264): max(dQ/dz) index per hyper.
+            tf.tensor([bSize, nhyper], tf.int32): max(dQ/dz) index per hyper.
         """
         # creates coordinate mask with patch coordinates
         cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
@@ -319,7 +319,7 @@ class FSModel(tfk.Model):
 
         Args:
             points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
-            j_elim (tf.tensor([bSize, nHyper], tf.int3264), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -337,7 +337,7 @@ class FSModel(tfk.Model):
         for i in range(self.nhyper):
             dQdz_mask = -1.*tf.one_hot(dQdz_indices[:, i], self.ncoords,dtype=real_dtype)
             full_mask = tf.math.add(full_mask, dQdz_mask)
-        n_p = tf.cast(tf.reduce_sum(tf.ones_like(full_mask[:, 0])), dtype=tf.int3264)
+        n_p = tf.cast(tf.reduce_sum(tf.ones_like(full_mask[:, 0])), dtype=tf.int32)
         full_mask = tf.cast(full_mask, dtype=tf.bool)
         x_z_indices = tf.where(full_mask)
         good_indices = x_z_indices[:, 1:2]
@@ -416,18 +416,18 @@ class FSModel(tfk.Model):
         args. Note it uses tf.split which won't allow for tf.vectorized_map, 
         because of different signature during graph building.
         """
-        # TODO: Clean up all the tf.int3264; some are needed because tf mixes its default int types for range and indexing
+        # TODO: Clean up all the tf.int32; some are needed because tf mixes its default int types for range and indexing
         fixed = args[0:self.nhyper]
         original = args[self.nhyper:]
         inv_fixed_mask = ~tf.cast(tf.reduce_sum(
             tf.one_hot(fixed, self.ncoords), axis=0), tf.bool)
         fixed_proj = tf.one_hot(
             tf.gather(self._proj_indices, fixed),
-            self.nProjective, dtype=tf.int3264)
+            self.nProjective, dtype=tf.int32)
         fixed_proj = tf.reduce_sum(fixed_proj, axis=0)
-        splits = tf.cast(self.degrees, dtype=tf.int3264) - fixed_proj
+        splits = tf.cast(self.degrees, dtype=tf.int32) - fixed_proj
         all_coords = tf.boolean_mask(
-            tf.cast(tf.range(self.ncoords), dtype=tf.int3264),
+            tf.cast(tf.range(self.ncoords), dtype=tf.int32),
             inv_fixed_mask)
         products = tf.split(all_coords, splits)
         all_patches = tf.stack(tf.meshgrid(*products, indexing='ij'), axis=-1)
@@ -436,7 +436,7 @@ class FSModel(tfk.Model):
         if npatches != self.nTransitions:
             same = tf.tile(original, [self.nTransitions-npatches])
             same = tf.reshape(same, (-1, self.nProjective))
-            same = tf.cast(same, dtype=tf.int3264)
+            same = tf.cast(same, dtype=tf.int32)
             return tf.concat([all_patches, same], axis=0)
         return all_patches
 
@@ -648,7 +648,7 @@ class FSModel(tfk.Model):
             points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             i_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
             j_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
-            fixed (tf.tensor([bSize, 1], tf.int3264)): Elimination indices.
+            fixed (tf.tensor([bSize, 1], tf.int32)): Elimination indices.
 
         Returns:
             tf.tensor([bSize, nfold, nfold], complex_dtype): T_ij on the CY.
@@ -696,8 +696,8 @@ class FSModel(tfk.Model):
         # fill the mixed ratio elements
         for j in range(self.nProjective):
             t_pos = tf.einsum('xi,xj->xij',
-                              tf.cast(g1_i == p2[:, j:j+1], dtype=tf.int3232),
-                              tf.cast(g1_proj == j, dtype=tf.int3232))
+                              tf.cast(g1_i == p2[:, j:j+1], dtype=tf.int32),
+                              tf.cast(g1_proj == j, dtype=tf.int32))
             t_indices = tf.where(tf.cast(t_pos, dtype=tf.bool))
             num_indices = tf.gather_nd(
                 g2_i, tf.concat((t_indices[:, 0:1], t_indices[:, 2:3]), axis=-1))
