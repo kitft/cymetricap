@@ -41,7 +41,7 @@ class PointGenerator:
 
         >>> import numpy as np
         >>> from cymetric.pointgen.pointgen import PointGenerator
-        >>> monomials = 5*np.eye(5, dtype=np.int)
+        >>> monomials = 5*np.eye(5, dtype=int)
         >>> coefficients = np.ones(5)
         >>> kmoduli = np.ones(1)
         >>> ambient = np.array([4])
@@ -62,11 +62,11 @@ class PointGenerator:
         computations. 
 
         Args:
-            monomials (ndarray[(nMonomials, ncoords), np.int]): monomials
+            monomials (ndarray[(nMonomials, ncoords), int]): monomials
             coefficients (ndarray[(nMonomials)]): coefficients in front of each
                 monomial.
             kmoduli (ndarray[(nProj)]): the kaehler moduli.
-            ambient (ndarray[(nProj), np.int]): the direct product of projective
+            ambient (ndarray[(nProj), int]): the direct product of projective
                 spaces making up the ambient space.
             vol_j_norm (float, optional): Normalization of the volume of the
                 Calabi-Yau X as computed from
@@ -86,10 +86,10 @@ class PointGenerator:
         else:
             level = logging.WARNING
         logger.setLevel(level=level)
-        self.monomials = monomials.astype(np.int64)
+        self.monomials = monomials.astype(int64)
         self.coefficients = coefficients
         self.kmoduli = kmoduli
-        self.ambient = ambient.astype(np.int64)
+        self.ambient = ambient.astype(int64)
         self.degrees = ambient + 1
         self.nhyper = 1
         self.nmonomials, self.ncoords = monomials.shape
@@ -128,7 +128,7 @@ class PointGenerator:
         needed for point generation, residue theorem
         and the pullback tensor.
         """
-        self.all_ts = np.eye(len(self.ambient), dtype=np.int64)
+        self.all_ts = np.eye(len(self.ambient), dtype=int64)
         self.selected_t = self.all_ts[np.argmax(self.ambient)]
         self._generate_root_basis()
         self._generate_dQdz_basis()
@@ -178,7 +178,7 @@ class PointGenerator:
              for i in range(self.ncoords)]).as_poly()
         poly_dict = self.tpoly.as_dict()
         all_vars = np.array(list(self.root_vars['p']) + list(self.root_vars['t']))
-        root_monomials = np.zeros((len(poly_dict), len(all_vars)), dtype=np.int32)
+        root_monomials = np.zeros((len(poly_dict), len(all_vars)), dtype=int)
         root_factors = np.zeros(len(poly_dict), dtype=np.complex128)
         mask = np.logical_or.reduce(all_vars == np.array(list(self.tpoly.free_symbols)).reshape(-1, 1))
         for i, entry in enumerate(poly_dict):
@@ -210,8 +210,8 @@ class PointGenerator:
         poly_p = self.poly.subs([(self.x[i], p[i] * t + q[i])
                                  for i in range(self.ncoords)]).as_poly()
         poly_dict = poly_p.as_dict()
-        p_monomials = np.zeros((len(poly_dict), self.ncoords), dtype=np.int32)
-        q_monomials = np.zeros((len(poly_dict), self.ncoords), dtype=np.int32)
+        p_monomials = np.zeros((len(poly_dict), self.ncoords), dtype=int)
+        q_monomials = np.zeros((len(poly_dict), self.ncoords), dtype=int)
         factors = np.zeros(len(poly_dict), dtype=np.complex128)
         for i, entry in enumerate(poly_dict):
             p_monomials[i, :] = entry[0:self.ncoords]
@@ -229,7 +229,7 @@ class PointGenerator:
         r"""Generates a monomial basis for dQ/dz_j."""
         self.dQdz_basis = []
         self.dQdz_factors = []
-        for i, m in enumerate(np.eye(self.ncoords, dtype=np.int32)):
+        for i, m in enumerate(np.eye(self.ncoords, dtype=int)):
             basis = self.monomials - m
             factors = self.monomials[:, i] * self.coefficients
             good = np.ones(len(basis), dtype=bool)
@@ -781,8 +781,8 @@ class PointGenerator:
         den_mask = [True if self.x[i] in den_free else False for i in range(self.ncoords)]
 
         # initialize output
-        num_monomials = np.zeros((len(num), self.ncoords), dtype=np.int32)
-        denmonomials = np.zeros((len(den), self.ncoords), dtype=np.int32)
+        num_monomials = np.zeros((len(num), self.ncoords), dtype=int)
+        denmonomials = np.zeros((len(den), self.ncoords), dtype=int)
         num_factor = np.zeros(len(num), dtype=np.complex128)
         den_factor = np.zeros(len(den), dtype=np.complex128)
 
@@ -812,8 +812,8 @@ class PointGenerator:
             shapes = np.array([[[np.shape(t[0]), np.shape(t[1])]
                                 if i != j else [[-1, -1], [-1, -1]] for i, t in enumerate(zi)]
                                for j, zi in enumerate(self.dzdz_basis)])
-            DZDZB_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0]), len(shapes)), dtype=np.int64)
-            DZDZB_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0]), len(shapes)), dtype=np.int64)
+            DZDZB_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0]), len(shapes)), dtype=int64)
+            DZDZB_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0]), len(shapes)), dtype=int64)
             DZDZF_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0])), dtype=np.complex128)
             DZDZF_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0])), dtype=np.complex128)
             for i in range(len(shapes)):
@@ -1040,7 +1040,7 @@ class PointGenerator:
 
         Args:
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
-            j_elim (ndarray([n_p], np.int64)): index to be eliminated. 
+            j_elim (ndarray([n_p], int64)): index to be eliminated. 
                 Defaults not None. If None eliminates max(dQdz).
 
         Returns:
@@ -1061,7 +1061,7 @@ class PointGenerator:
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
 
         Returns:
-            ndarray[(n_p), np.int64]: max(dQdz) indices
+            ndarray[(n_p), int64]: max(dQdz) indices
         """
         dQdz = np.abs(self._compute_dQdz(points))
         dQdz = dQdz * (~np.isclose(points, complex(1, 0)))
@@ -1123,7 +1123,7 @@ class PointGenerator:
                                 &= d^{ijk} t_i t_j t_k.
 
                 Defaults to False.
-            j_elim (ndarray([n_p, nhyper], np.int64)): Index to be eliminated. 
+            j_elim (ndarray([n_p, nhyper], int64)): Index to be eliminated. 
                 Defaults to None. If None eliminates max(dQdz).
 
         Returns:
@@ -1189,7 +1189,7 @@ class PointGenerator:
 
         Args:
             points (ndarray([n_p, ncoords], np.complex128)): Points.
-            j_elim (ndarray([n_p, nhyper], np.int64)): Index to be eliminated. 
+            j_elim (ndarray([n_p, nhyper], int64)): Index to be eliminated. 
                 Defaults to None. If None eliminates max(dQdz).
 
         Returns:
@@ -1256,7 +1256,7 @@ class PointGenerator:
 
         Args:
             points (ndarray([n_p, ncoords], np.complex128)): Points.
-            j_elim (ndarray([n_p], np.int)): index to be eliminated. 
+            j_elim (ndarray([n_p], int)): index to be eliminated. 
                 Defaults not None. If None eliminates max(dQdz).
 
         Returns:

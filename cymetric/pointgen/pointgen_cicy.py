@@ -64,12 +64,12 @@ class CICYPointGenerator(PointGenerator):
         computations.
 
         Args:
-            monomials (list(ndarray[(nMonomials, ncoord), np.int])): list of
+            monomials (list(ndarray[(nMonomials, ncoord), int])): list of
                 length nHyper with monomials for each defining equation.
             coefficients (list(ndarray[(nMonomials)])): list of coefficients
                 in front of each monomial.
             kmoduli (ndarray[(nProj)]): The kaehler moduli.
-            ambient (ndarray[(nProj), np.int]): the direct product of 
+            ambient (ndarray[(nProj), int]): the direct product of 
                 projective spaces making up the ambient space.
             vol_j_norm (float, optional): Normalization of the volume of the
                 Calabi-Yau X as computed from
@@ -89,7 +89,7 @@ class CICYPointGenerator(PointGenerator):
         else:
             level = logging.WARNING
         logger.setLevel(level=level)
-        self.monomials = [m.astype(np.int64) for m in monomials]
+        self.monomials = [m.astype(int64) for m in monomials]
         self.coefficients = coefficients
         self.kmoduli = kmoduli
         self.ambient = ambient
@@ -180,7 +180,7 @@ class CICYPointGenerator(PointGenerator):
         ).as_poly() for pi in self.poly]
         poly_dict = [pi.as_dict() for pi in self.tpoly]
         all_vars = np.array(list(self.root_vars['p']) + list(self.root_vars['t']))
-        self.root_monomials = [np.zeros((len(pi), len(all_vars)), dtype=np.int32) for pi in poly_dict]
+        self.root_monomials = [np.zeros((len(pi), len(all_vars)), dtype=int) for pi in poly_dict]
         self.root_factors = [np.zeros(len(pi), dtype=np.complex128) for pi in poly_dict]
         for j in range(self.nhyper):
             mask = np.logical_or.reduce(all_vars == np.array(list(self.tpoly[j].free_symbols)).reshape(-1, 1))
@@ -254,7 +254,7 @@ class CICYPointGenerator(PointGenerator):
         r"""Finds all possible ways to arrange the free parameters.
 
         Returns:
-            ndarray([n_comb, nProj], np.int): all possible arrangements
+            ndarray([n_comb, nProj], int): all possible arrangements
         """
         free_ts = list(generate_monomials(len(self.ambient), self.nhyper))
         free_ts = np.array(free_ts)
@@ -276,7 +276,7 @@ class CICYPointGenerator(PointGenerator):
         r"""Generates t-degrees in ambient space factors.
         Determines the shape for the expanded sphere points.
         """
-        degrees = np.zeros(len(self.ambient), dtype=np.int32)
+        degrees = np.zeros(len(self.ambient), dtype=int)
         for j in range(self.nhyper):
             d = np.argmax(self.conf[j])
             if degrees[d] == self.ambient[d]:
@@ -370,8 +370,8 @@ class CICYPointGenerator(PointGenerator):
                 else:
                     points[n_p_found:n_p_found + len(new_points)] = new_points
                     n_p_found += len(new_points)
-        npoints = self._rescale_points(points)
-        return npoints
+        ints = self._rescale_points(points)
+        return ints
 
     def _get_point(self, p, acc=1e-8, nattempts=1, fprime=None):
         r"""Generates a single point on the CICY
@@ -415,7 +415,7 @@ class CICYPointGenerator(PointGenerator):
         self.dQdz_basis = [[] for _ in range(self.nhyper)]
         self.dQdz_factors = [[] for _ in range(self.nhyper)]
         for j in range(self.nhyper):
-            for i, m in enumerate(np.eye(self.ncoords, dtype=np.int32)):
+            for i, m in enumerate(np.eye(self.ncoords, dtype=int)):
                 basis = self.monomials[j] - m
                 factors = self.monomials[j][:, i] * self.coefficients[j]
                 good = np.ones(len(basis), dtype=bool)
@@ -428,8 +428,8 @@ class CICYPointGenerator(PointGenerator):
         pullback tensor. NOTE: This code is not actively needed anymore.
         """
         self.dzdz_generated = True
-        self.dzdz_basis = [[[(np.zeros((1, self.ncoords), dtype=np.int32),
-                              np.zeros((1, self.ncoords), dtype=np.int32))
+        self.dzdz_basis = [[[(np.zeros((1, self.ncoords), dtype=int),
+                              np.zeros((1, self.ncoords), dtype=int))
                              for _ in range(self.ncoords)]
                             for _ in range(self.ncoords)] for _ in range(self.nhyper)]
         self.dzdz_factor = [[[([0], [0]) for _ in range(self.ncoords)]
@@ -489,8 +489,8 @@ class CICYPointGenerator(PointGenerator):
                     else [[-1, -1], [-1, -1]] for i, t in enumerate(zi)]
                     for j, zi in enumerate(self.dzdz_basis[k])]
                 )
-                DZDZB_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0]), self.ncoords), dtype=np.int64)
-                DZDZB_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0]), self.ncoords), dtype=np.int64)
+                DZDZB_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0]), self.ncoords), dtype=int64)
+                DZDZB_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0]), self.ncoords), dtype=int64)
                 DZDZF_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0])), dtype=np.complex64)
                 DZDZF_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0])), dtype=np.complex64)
                 for i in range(self.ncoords):
@@ -518,7 +518,7 @@ class CICYPointGenerator(PointGenerator):
     
         Args:
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
-            j_elim (ndarray[(n_p, nhyper), np.int64]): Index to be eliminated. 
+            j_elim (ndarray[(n_p, nhyper), int64]): Index to be eliminated. 
                 Defaults to None. If None eliminates max(dQdz).
     
         Returns:
@@ -541,10 +541,10 @@ class CICYPointGenerator(PointGenerator):
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
 
         Returns:
-            ndarray[(n_p, nhyper), np.int64]: maxdQdz indices
+            ndarray[(n_p, nhyper), int64]: maxdQdz indices
         """
         available_mask = ~np.isclose(points, complex(1, 0))
-        max_coords = np.zeros((len(points), self.nhyper), dtype=np.int32)
+        max_coords = np.zeros((len(points), self.nhyper), dtype=int)
         for i in range(self.nhyper):
             dQdz = np.abs(self._compute_dQdz(points, i))
             max_coords[:, i] = np.argmax(dQdz * available_mask, axis=-1)

@@ -196,7 +196,7 @@ class ToricPointGenerator(PointGenerator):
         """
         x = x_guess.view(np.complex128)
         eqs = [np.add.reduce(self.coefficients * np.multiply.reduce(np.power(x, self.monomials), axis=-1), axis=-1)]
-        num_eqns_in_pn = np.zeros(self.nsections, dtype=np.int32)
+        num_eqns_in_pn = np.zeros(self.nsections, dtype=int)
         # TODO: vectorize this.
         for i, (e, p) in enumerate(zip(x, patch_mask)):
             if p == 1:
@@ -333,7 +333,7 @@ class ToricPointGenerator(PointGenerator):
         We give one to each section and the remaining to the largest
         pseudo ambient space.
         """
-        degrees = np.zeros(len(self.num_sections), dtype=np.int32)
+        degrees = np.zeros(len(self.num_sections), dtype=int)
         available_degrees = np.array(self.num_sections)
         for _ in range(int(self.nfold)):
             largest_proj = np.argmax(available_degrees[:, 0])
@@ -381,7 +381,7 @@ class ToricPointGenerator(PointGenerator):
         
         Args:
             points (ndarray([n_p, ncoords], np.complex128)): Points.
-            patch_index (ndarry([n_p], np.int64)): Patch indices.
+            patch_index (ndarry([n_p], int64)): Patch indices.
 
         Returns:
             ndarray([n_p, ncoords], np.complex128): Rescaled coordinates.
@@ -405,7 +405,7 @@ class ToricPointGenerator(PointGenerator):
         missing_points = np.ones(len(points), dtype=bool)
         for i in range(len(self.patch_masks)):
             tmp_points = self._get_patch_coordinates(points[missing_points],
-                                                     np.zeros(np.sum(missing_points), dtype=np.int32)+i)
+                                                     np.zeros(np.sum(missing_points), dtype=int)+i)
             abs_points = np.logical_and.reduce(np.abs(tmp_points) < 1.0001, axis=-1)
             # update
             scaled_points[missing_points] = np.where(abs_points[:, np.newaxis], tmp_points, scaled_points[missing_points])
