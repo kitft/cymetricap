@@ -129,7 +129,7 @@ class FreeModel(FSModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 Not used in this model. Defaults to None.
 
@@ -596,7 +596,7 @@ class MultFSModel(FreeModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -640,7 +640,7 @@ class MatrixFSModel(FreeModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -678,7 +678,7 @@ class AddFSModel(FreeModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -744,7 +744,7 @@ class PhiFSModel(FreeModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional):
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -894,7 +894,7 @@ class ToricModel(FreeModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -921,7 +921,7 @@ class ToricModel(FreeModel):
             points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             pb (tf.tensor([bSize, nfold, ncoords], real_dtype)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
-            j_elim (tf.tensor([bSize], tf.int)): index to be eliminated. 
+            j_elim (tf.tensor([bSize], tf.int32)): index to be eliminated. 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
             ts (tf.tensor([len(kmoduli)], complex_dtype)):
@@ -1002,7 +1002,7 @@ class ToricModel(FreeModel):
             all_indices = np.where(all_patches)[0]
             fixed_patches[i, all_indices, 0:len(all_indices)] = all_indices * \
                 np.ones((len(all_indices), len(all_indices)), dtype=int)
-        return tf.cast(fixed_patches, dtype=tf.int)
+        return tf.cast(fixed_patches, dtype=tf.int32)
 
     @tf.function
     def _get_patch_coordinates(self, points, patch_index):
@@ -1081,7 +1081,7 @@ class ToricModel(FreeModel):
             points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             i_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
             j_mask (tf.tensor([bSize, ncoords], tf.bool)): Mask of pi-indices.
-            fixed (tf.tensor([bSize, 1], tf.int)): Elimination indices.
+            fixed (tf.tensor([bSize, 1], tf.int32)): Elimination indices.
 
         Returns:
             tf.tensor([bSize, nfold, nfold], complex_dtype): T_ij on the CY.
@@ -1168,7 +1168,7 @@ class PhiFSModelToric(ToricModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -1276,7 +1276,7 @@ class PhiFSModelToric(ToricModel):
             points (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             pb (tf.tensor([bSize, nfold, ncoords], real_dtype)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional):
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -1322,7 +1322,7 @@ class MatrixFSModelToric(ToricModel):
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], real_dtype)): Points.
             training (bool, optional): Not used. Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int32), optional): 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
