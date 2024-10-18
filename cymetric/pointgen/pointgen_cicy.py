@@ -89,7 +89,7 @@ class CICYPointGenerator(PointGenerator):
         else:
             level = logging.WARNING
         logger.setLevel(level=level)
-        self.monomials = [m.astype(int64) for m in monomials]
+        self.monomials = [m.astype(int) for m in monomials]
         self.coefficients = coefficients
         self.kmoduli = kmoduli
         self.ambient = ambient
@@ -489,8 +489,8 @@ class CICYPointGenerator(PointGenerator):
                     else [[-1, -1], [-1, -1]] for i, t in enumerate(zi)]
                     for j, zi in enumerate(self.dzdz_basis[k])]
                 )
-                DZDZB_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0]), self.ncoords), dtype=int64)
-                DZDZB_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0]), self.ncoords), dtype=int64)
+                DZDZB_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0]), self.ncoords), dtype=int)
+                DZDZB_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0]), self.ncoords), dtype=int)
                 DZDZF_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0])), dtype=np.complex64)
                 DZDZF_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0])), dtype=np.complex64)
                 for i in range(self.ncoords):
@@ -518,7 +518,7 @@ class CICYPointGenerator(PointGenerator):
     
         Args:
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
-            j_elim (ndarray[(n_p, nhyper), int64]): Index to be eliminated. 
+            j_elim (ndarray[(n_p, nhyper), int]): Index to be eliminated. 
                 Defaults to None. If None eliminates max(dQdz).
     
         Returns:
@@ -541,7 +541,7 @@ class CICYPointGenerator(PointGenerator):
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
 
         Returns:
-            ndarray[(n_p, nhyper), int64]: maxdQdz indices
+            ndarray[(n_p, nhyper), int]: maxdQdz indices
         """
         available_mask = ~np.isclose(points, complex(1, 0))
         max_coords = np.zeros((len(points), self.nhyper), dtype=int)

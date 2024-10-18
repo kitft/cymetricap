@@ -381,7 +381,7 @@ class ToricPointGenerator(PointGenerator):
         
         Args:
             points (ndarray([n_p, ncoords], np.complex128)): Points.
-            patch_index (ndarry([n_p], int64)): Patch indices.
+            patch_index (ndarry([n_p], int)): Patch indices.
 
         Returns:
             ndarray([n_p, ncoords], np.complex128): Rescaled coordinates.
