@@ -1366,7 +1366,7 @@ class BiholoModelFuncGENERALforSigma(tf.keras.Model):
         self.ambient=tf.cast(BASIS['AMBIENT'],tf.int32)
         self.kmoduli=BASIS['KMODULI']
         self.bihom_func= bihom_function_generator(np.array(self.ambient),len(self.ambient),self.kmoduli)
-        self.get_deg_kphi_and_mons_class=get_degree_kphiandMmonomials(k_phi,linebundleindices,self.indslist)
+        self.get_deg_kphi_and_mons_class=get_degree_kphiandMmonomials_general(k_phi,linebundleindices,self.indslist,len(self.k_phi),self.kmoduli)
         self.get_deg_kphi_and_mons=tf.function(self.get_deg_kphi_and_mons_class.__call__,input_signature=(tf.TensorSpec(shape=[None,self.nCoords], dtype=complex_dtype),))
         #self.get_deg_kphi_and_mons_func=lambda x: get_degree_kphiandMmonomials_func(k_phi,linebundleindices,self.indslist,x)
 
@@ -1495,3 +1495,36 @@ def make_nn(n_in,n_out,nlayer,nHidden,act='gelu',lastbias=False,use_zero_network
       nn_phi.add(tfk.layers.Dense(n_out, use_bias=lastbias))
    return nn_phi
     
+
+if __name__ == "__main__":
+    # Define the parameters for the test
+    layer_sizes = [10, 20, 30, 40]
+    BASIS = {
+        'AMBIENT': [1,1,1,1],
+        'KMODULI': [1.0, 1.0,1.0,1.0]
+    }
+    linebundleindices = [1, 1,1,1]
+    nsections = 2**4
+    k_phi = [0,0,0,0]
+    activation = tf.square
+    stddev = 0.1
+    use_zero_network = False
+
+    # Create an instance of BiholoModelFuncGENERALforSigma
+    model = BiholoModelFuncGENERALforSigma(layer_sizes, BASIS, linebundleindices, nsections, k_phi, activation, stddev, use_zero_network)
+
+    # Generate some random input data
+    inputs = tf.random.normal([5, sum(BASIS['AMBIENT']) + 2])
+
+    # Call the model with the input data
+    outputs = model(inputs)
+
+    # Print the outputs
+    print("Outputs:")
+    print(outputs)
+
+    # Check if the sections of the tetraquadric transform appropriately
+    # This is a placeholder for the actual transformation check
+    # You should replace this with the appropriate transformation check logic
+    print("Transformation check (placeholder):")
+    print("Sections of the tetraquadric transform appropriately (placeholder)")
