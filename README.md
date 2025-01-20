@@ -1,3 +1,7 @@
+# cymetric-AlphaPrime
+cymetricap is a Python package for learning of the $\alpha'$ corrections to Calabi-Yau metrics in type IIB. See our [paper](https://arxiv.org/pdf/2411.00962) for more.
+
+
 # cymetric
 
 ![CYMetric plots](/assets/plots.jpg)
